@@ -49,8 +49,8 @@ PRIVATE_KEY=your_private_key
 TREASURY_ADDRESS=your_treasury_address
 CELOSCAN_API_KEY=your_api_key
 
-Deploy to Alfajores testnet:
-forge script script/Deploy.s.sol:DeployScript --rpc-url alfajores --broadcast --verify
+Deploy to Celo Sepolia testnet:
+forge script script/Deploy.s.sol:DeployScript --rpc-url celo-sepolia --broadcast --verify
 
 Deploy to Celo mainnet:
 forge script script/Deploy.s.sol:DeployScript --rpc-url celo --broadcast --verify
