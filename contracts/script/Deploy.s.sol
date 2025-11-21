@@ -5,6 +5,8 @@ import {Script, console} from "forge-std/Script.sol";
 import {RhythmRushGem} from "../src/RhythmRushGem.sol";
 import {RhythmRushRewards} from "../src/RhythmRushRewards.sol";
 import {RhythmRushToken} from "../src/RhythmRushToken.sol";
+import {RhythmRushSwap} from "../src/RhythmRushSwap.sol";
+import {RhythmRushSwap} from "../src/RhythmRushSwap.sol";
 
 contract DeployScript is Script {
     // Celo Mainnet addresses
@@ -44,16 +46,27 @@ contract DeployScript is Script {
         // Step 3: Deploy Rewards contract (uses RUSH token for rewards)
         RhythmRushRewards rewards = new RhythmRushRewards(
             address(rushToken), // Use RUSH token for rewards
-            100 // Minimum score threshold
+            10 // Minimum score threshold (reduced from 100)
         );
         
         console.log("RhythmRushRewards deployed at:", address(rewards));
         
-        // Step 4: Set rewards contract in token (allows minting)
+        // Step 4: Deploy Swap contract (allows buying RUSH with CELO)
+        RhythmRushSwap swap = new RhythmRushSwap(
+            address(rushToken),
+            treasury
+        );
+        console.log("RhythmRushSwap deployed at:", address(swap));
+        
+        // Step 5: Set rewards contract in token (allows minting)
         rushToken.setRewardsContract(address(rewards));
         console.log("Rewards contract set in token");
         
-        // Step 5: Activate claim
+        // Step 6: Set swap contract in token (allows minting)
+        rushToken.setSwapContract(address(swap));
+        console.log("Swap contract set in token");
+        
+        // Step 7: Activate claim
         gem.setClaimConditions(true, block.timestamp);
         console.log("Claim activated!");
         
@@ -63,12 +76,16 @@ contract DeployScript is Script {
         console.log("RhythmRushToken (RUSH):", address(rushToken));
         console.log("Gem Contract:", address(gem));
         console.log("Rewards Contract:", address(rewards));
+        console.log("Swap Contract:", address(swap));
         console.log("Treasury:", treasury);
         console.log("\nToken Details:");
         console.log("  Name:", rushToken.name());
         console.log("  Symbol:", rushToken.symbol());
         console.log("  Total Supply:", rushToken.totalSupply());
         console.log("  Max Supply:", rushToken.MAX_SUPPLY());
+        console.log("\nSwap Details:");
+        console.log("  Exchange Rate:", swap.getExchangeRate(), "RUSH per 1 CELO");
+        console.log("\n⚠️  IMPORTANT: Update frontend with new contract addresses!");
     }
 }
 

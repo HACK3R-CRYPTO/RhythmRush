@@ -13,14 +13,53 @@ export default function IPhoneFrame({
   bottomNavContent,
   backgroundClassName = "bg-rhythmrush" 
 }: iPhoneFrameProps) {
-  const [isMobile, setIsMobile] = useState(false);
+  // Initialize with better mobile detection
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    
+    // Check screen width first
+    const width = window.innerWidth;
+    const isMobileWidth = width < 768;
+    
+    // Check if it's a touch device
+    const isTouchDevice = 'ontouchstart' in window || 
+                         navigator.maxTouchPoints > 0 ||
+                         (navigator as any).msMaxTouchPoints > 0;
+    
+    // Check user agent for mobile devices
+    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+    
+    // Mobile if: small width OR (touch device AND mobile UA) OR (touch device AND small width)
+    return isMobileWidth || (isTouchDevice && isMobileUA) || (isTouchDevice && width < 1024);
+  });
 
   useEffect(() => {
     const checkMobile = () => {
-      // Check if screen width is mobile (less than 768px) or if it's a touch device
-      const isMobileScreen = window.innerWidth < 768;
-      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      setIsMobile(isMobileScreen || (isTouchDevice && window.innerWidth < 1024));
+      if (typeof window === 'undefined') return;
+      
+      const width = window.innerWidth;
+      const isMobileWidth = width < 768;
+      
+      const isTouchDevice = 'ontouchstart' in window || 
+                           navigator.maxTouchPoints > 0 ||
+                           (navigator as any).msMaxTouchPoints > 0;
+      
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      
+      const shouldBeMobile = isMobileWidth || (isTouchDevice && isMobileUA) || (isTouchDevice && width < 1024);
+      
+      setIsMobile(shouldBeMobile);
+      
+      // Debug log
+      console.log('📱 Mobile Detection:', {
+        width,
+        isMobileWidth,
+        isTouchDevice,
+        isMobileUA,
+        isMobile: shouldBeMobile
+      });
     };
 
     // Check immediately
@@ -36,25 +75,25 @@ export default function IPhoneFrame({
     };
   }, []);
 
-  // On mobile, render without frame
+  // On mobile, render without frame - full screen
   if (isMobile) {
     return (
-      <div className={`min-h-screen w-full ${backgroundClassName}`}>
+      <div className={`min-h-screen w-full ${backgroundClassName} overflow-hidden`} style={{ margin: 0, padding: 0 }}>
         {/* Status Bar for mobile */}
         {statusBarContent && (
-          <div className="w-full h-[44px] bg-transparent flex items-center justify-between px-4">
+          <div className="w-full h-[44px] bg-transparent flex items-center justify-between px-4 z-10">
             {statusBarContent}
           </div>
         )}
         
-        {/* Main Content */}
-        <div className={`relative w-full min-h-[calc(100vh-44px)] ${backgroundClassName} overflow-auto`}>
+        {/* Main Content - Full screen, no frame */}
+        <div className={`relative w-full ${statusBarContent ? 'min-h-[calc(100vh-44px)]' : 'min-h-screen'} ${backgroundClassName} overflow-auto`} style={{ margin: 0, padding: 0 }}>
           {children}
         </div>
 
         {/* Bottom Navigation */}
         {bottomNavContent && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white pt-2 pb-6 rounded-t-3xl shadow-lg">
+          <div className="fixed bottom-0 left-0 right-0 bg-white pt-2 pb-6 rounded-t-3xl shadow-lg z-10">
             {bottomNavContent}
           </div>
         )}

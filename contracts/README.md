@@ -4,9 +4,10 @@ Smart contracts for RhythmRush, a play-to-earn rhythm game on Celo blockchain. P
 
 ## Overview
 
-This repository contains three main smart contracts:
+This repository contains four main smart contracts:
 
 - **RhythmRushToken (RUSH)** - ERC20 token for payments and rewards
+- **RhythmRushSwap** - Swap contract to buy RUSH tokens with CELO
 - **RhythmRushGem** - ERC721 NFT contract for game access tokens
 - **RhythmRushRewards** - Score tracking and reward distribution
 
@@ -71,17 +72,31 @@ You need CELO for gas fees.
 
 ## Deployment
 
-### Deploy to Celo Sepolia Testnet
+### Deploy All Contracts to Celo Sepolia Testnet
 
 ```bash
 forge script script/Deploy.s.sol:DeployScript --rpc-url celo-sepolia --broadcast --verify
 ```
 
 This command:
-- Deploys all three contracts
+- Deploys all four contracts (Token, Swap, Gem, Rewards)
 - Sets up contract relationships
 - Activates claim conditions
 - Verifies contracts on Blockscout
+
+### Deploy Only Token and Swap Contracts
+
+If you only need to deploy the token and swap contracts:
+
+```bash
+forge script script/DeployTokenAndSwap.s.sol:DeployTokenAndSwapScript --rpc-url celo-sepolia --broadcast --verify
+```
+
+Then update existing Gem contract to use new token:
+
+```bash
+forge script script/UpdateContracts.s.sol:UpdateContractsScript --rpc-url celo-sepolia --broadcast
+```
 
 ### Deploy to Celo Mainnet
 
@@ -93,13 +108,32 @@ forge script script/Deploy.s.sol:DeployScript --rpc-url celo --broadcast --verif
 
 ### Celo Sepolia Testnet
 
-- **RhythmRushToken**: `0x4F47D6843095F3b53C67B02C9B72eB1d579051ba`
+- **RhythmRushToken**: `0x9f70e9CDe0576E549Fb8BB9135eB74c304b0868A` (New token with swap functionality)
+- **RhythmRushSwap**: `0x22E1952B7C44e57C917f19Df8c0d186A4f80E2B4` (Buy RUSH with CELO - 1 CELO = 30 RUSH)
 - **RhythmRushGem**: `0xBdE05919CE1ee2E20502327fF74101A8047c37be`
 - **RhythmRushRewards**: `0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280`
 
 View on [Blockscout](https://celo-sepolia.blockscout.com/)
 
 ## Usage
+
+### Buying RUSH Tokens with CELO
+
+Users can buy RUSH tokens directly with CELO using the swap contract:
+
+```solidity
+// Send CELO to swap contract
+swapContract.buyRushTokens{value: celoAmount}();
+
+// Exchange rate: 1 CELO = 30 RUSH tokens
+// Minimum purchase: 0.01 CELO
+```
+
+The swap contract:
+- Accepts CELO (native currency)
+- Mints RUSH tokens directly to buyer
+- Transfers CELO to treasury
+- Exchange rate adjustable by owner
 
 ### Minting NFT Gems
 
@@ -206,6 +240,35 @@ const gemContract = getContract({
 });
 ```
 
+### Example: Buy RUSH Tokens with CELO
+
+```typescript
+import { ethers } from "ethers";
+
+const swapAddress = "0x22E1952B7C44e57C917f19Df8c0d186A4f80E2B4";
+const swapABI = [
+  {
+    inputs: [],
+    name: "buyRushTokens",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function"
+  }
+];
+
+const provider = new ethers.providers.Web3Provider(window.ethereum);
+const signer = provider.getSigner();
+const swapContract = new ethers.Contract(swapAddress, swapABI, signer);
+
+// Buy 34 RUSH tokens (costs ~1.1333 CELO)
+const celoAmount = ethers.utils.parseEther("1.1333");
+const tx = await swapContract.buyRushTokens({
+  value: celoAmount,
+  gasLimit: 200000
+});
+await tx.wait();
+```
+
 ### Example: Mint a Gem
 
 ```typescript
@@ -264,12 +327,15 @@ forge verify-contract <CONTRACT_ADDRESS> <CONTRACT_PATH>:<CONTRACT_NAME> \
 contracts/
 ├── src/
 │   ├── RhythmRushToken.sol    # ERC20 token contract
+│   ├── RhythmRushSwap.sol     # Swap contract (CELO to RUSH)
 │   ├── RhythmRushGem.sol      # ERC721 NFT contract
 │   └── RhythmRushRewards.sol  # Rewards distribution
 ├── test/
 │   └── RhythmRush.t.sol       # Test suite
 ├── script/
-│   └── Deploy.s.sol          # Deployment script
+│   ├── Deploy.s.sol           # Full deployment script
+│   ├── DeployTokenAndSwap.s.sol # Token and Swap only
+│   └── UpdateContracts.s.sol  # Update existing contracts
 ├── foundry.toml              # Foundry configuration
 └── README.md                 # This file
 ```
@@ -305,9 +371,6 @@ Contracts include security features:
 2. Check Solidity version matches (0.8.24)
 3. Verify dependencies installed: `forge install`
 
-## License
-
-MIT License. See LICENSE file for details.
 
 ## Support
 
