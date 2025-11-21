@@ -26,9 +26,15 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [router]);
 
-  if (loading) {
+  const handleSkip = () => {
+    setLoading(false);
+    router.replace('/wallet-connect');
+  };
+
   return (
-      <IPhoneFrame backgroundClassName="bg-rhythmrush">
+    <IPhoneFrame backgroundClassName="bg-rhythmrush">
+      <div className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden">
+        {/* Animated background gems */}
         <motion.div 
           className="absolute inset-0"
           initial={{ opacity: 0 }}
@@ -62,7 +68,8 @@ export default function Home() {
           ))}
         </motion.div>
 
-        <div className="relative z-10 flex flex-col items-center justify-center h-full">
+        {/* Main content */}
+        <div className="relative z-10 flex flex-col items-center justify-center h-full px-6">
           <motion.div
             initial={{ scale: 0, y: 50 }}
             animate={{ scale: 1, y: 0 }}
@@ -73,9 +80,10 @@ export default function Home() {
               delay: 0.3
             }}
             className="mb-8"
-            >
-            <div className="w-[120px] h-[120px] bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full shadow-2xl animate-pulse flex items-center justify-center">
-              <span className="text-4xl">🎵</span>
+          >
+            <div className="w-[120px] h-[120px] bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full shadow-2xl animate-pulse flex items-center justify-center"
+              style={{ width: 'clamp(100px, 25vw, 120px)', height: 'clamp(100px, 25vw, 120px)' }}>
+              <span className="text-4xl" style={{ fontSize: 'clamp(32px, 8vw, 48px)' }}>🎵</span>
             </div>
           </motion.div>
 
@@ -85,7 +93,7 @@ export default function Home() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="text-center"
           >
-            <h1 className="text-6xl font-bold mb-2">
+            <h1 className="font-bold mb-2" style={{ fontSize: 'clamp(32px, 8vw, 48px)' }}>
               <motion.span
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -100,14 +108,15 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: 0.9 }}
                 className="text-white"
               >
-                RUSH
+                {" "}RUSH
               </motion.span>
             </h1>
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.1 }}
-              className="text-white/80 text-lg mt-2"
+              className="text-white/80 mt-2"
+              style={{ fontSize: 'clamp(14px, 3.5vw, 18px)' }}
             >
               Play. Earn. Win.
             </motion.p>
@@ -131,10 +140,20 @@ export default function Home() {
               className="w-3 h-3 bg-white rounded-full"
             />
           </motion.div>
-        </div>
-      </IPhoneFrame>
-  );
-  }
 
-  return null;
+          {/* Skip button */}
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.5 }}
+            onClick={handleSkip}
+            className="mt-8 text-white/60 text-sm hover:text-white transition-colors underline"
+            style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}
+          >
+            Tap to skip
+          </motion.button>
+        </div>
+      </div>
+    </IPhoneFrame>
+  );
 }

@@ -301,8 +301,9 @@ export default function PlayPage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => router.push('/mint')}
                   disabled={isChecking}
-                  className="w-full rounded-xl font-bold transition shadow-lg bg-gray-500 text-white cursor-not-allowed"
+                  className="w-full rounded-xl font-bold transition shadow-lg bg-rhythmrush-gold hover:bg-yellow-400 text-black disabled:bg-gray-500 disabled:text-white disabled:cursor-not-allowed"
                   style={{
                     paddingTop: 'clamp(12px, 3vh, 16px)',
                     paddingBottom: 'clamp(12px, 3vh, 16px)',

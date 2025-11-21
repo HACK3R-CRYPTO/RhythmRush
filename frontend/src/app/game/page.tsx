@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { useActiveAccount } from "thirdweb/react";
 import { ethers } from "ethers";
@@ -39,9 +39,84 @@ export default function GamePage() {
   const startTimeRef = useRef<number>(0);
   const targetStartTimeRef = useRef<number>(0); // When current target started glowing
   const scoreRef = useRef<number>(0); // Keep track of current score for closure
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const toneGeneratorsRef = useRef<{ [key: string]: () => void }>({});
+  const audioContextRef = useRef<AudioContext | null>(null);
   const gameDuration = 30000; // 30 seconds
 
   const buttons = [1, 2, 3, 4];
+
+  // Initialize audio files
+  useEffect(() => {
+    // Create audio elements for each button
+    buttons.forEach((beat) => {
+      const audio = new Audio();
+      audio.src = `/sounds/button${beat}.mp3`;
+      audio.preload = 'auto';
+      audio.volume = 0.5;
+      audioRefs.current[`button${beat}`] = audio;
+    });
+    
+    // Feedback sounds
+    const perfectAudio = new Audio('/sounds/perfect.mp3');
+    perfectAudio.preload = 'auto';
+    perfectAudio.volume = 0.6;
+    audioRefs.current['perfect'] = perfectAudio;
+    
+    const goodAudio = new Audio('/sounds/good.mp3');
+    goodAudio.preload = 'auto';
+    goodAudio.volume = 0.6;
+    audioRefs.current['good'] = goodAudio;
+    
+    const missAudio = new Audio('/sounds/wrong.mp3');
+    missAudio.preload = 'auto';
+    missAudio.volume = 0.5;
+    audioRefs.current['miss'] = missAudio;
+    
+    // Initialize audio context for tone generation
+    const initAudioContext = () => {
+      if (!audioContextRef.current) {
+        try {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        } catch (e) {
+          console.log('Audio context not available');
+        }
+      }
+      return audioContextRef.current;
+    };
+    
+    const generateTone = (frequency: number, duration: number = 0.1) => {
+      return () => {
+        try {
+          const ctx = initAudioContext();
+          if (!ctx) return;
+          
+          const oscillator = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          
+          oscillator.frequency.value = frequency;
+          oscillator.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
+          
+          oscillator.start(ctx.currentTime);
+          oscillator.stop(ctx.currentTime + duration);
+        } catch (e) {
+          // Silently fail if audio not available
+        }
+      };
+    };
+    
+    // Store tone generators as fallback (different frequencies for each button)
+    toneGeneratorsRef.current['tone1'] = generateTone(440); // A4
+    toneGeneratorsRef.current['tone2'] = generateTone(523.25); // C5
+    toneGeneratorsRef.current['tone3'] = generateTone(659.25); // E5
+    toneGeneratorsRef.current['tone4'] = generateTone(783.99); // G5
+  }, []);
 
   const startGame = () => {
     setScore(0);
@@ -59,6 +134,8 @@ export default function GamePage() {
       setCurrentTarget((prev) => {
         const next = (prev % 4) + 1;
         targetStartTimeRef.current = Date.now(); // Update when new target starts
+        // Play sound when target changes (visual cue)
+        playSound(`button${next}`);
         return next;
       });
     }, 1200);
@@ -141,8 +218,42 @@ export default function GamePage() {
     }, 2000);
   };
 
-  const handleButtonClick = (clickedBeat: number) => {
+  const playSound = (soundName: string) => {
+    try {
+      const audio = audioRefs.current[soundName];
+      if (audio && typeof audio.play === 'function') {
+        // Try to play audio file
+        audio.currentTime = 0;
+        audio.play().catch(() => {
+          // If file doesn't exist or fails, try tone fallback
+          const buttonNum = soundName.replace('button', '');
+          if (buttonNum && toneGeneratorsRef.current[`tone${buttonNum}`]) {
+            const toneFunc = toneGeneratorsRef.current[`tone${buttonNum}`];
+            if (typeof toneFunc === 'function') {
+              toneFunc();
+            }
+          }
+        });
+      } else {
+        // Fallback to tone if audio file not found
+        const buttonNum = soundName.replace('button', '');
+        if (buttonNum && toneGeneratorsRef.current[`tone${buttonNum}`]) {
+          const toneFunc = toneGeneratorsRef.current[`tone${buttonNum}`];
+          if (typeof toneFunc === 'function') {
+            toneFunc();
+          }
+        }
+      }
+    } catch (e) {
+      // Silently fail if audio not available
+    }
+  };
+
+  const handleButtonClick = useCallback((clickedBeat: number) => {
     if (!gameActive) return;
+
+    // Play button tap sound
+    playSound(`button${clickedBeat}`);
 
     // User should click the CURRENT glowing button (currentTarget)
     const timeSinceTargetStart = Date.now() - targetStartTimeRef.current;
@@ -154,6 +265,7 @@ export default function GamePage() {
     if (clickedBeat === currentTarget) {
       if (timeSinceTargetStart <= 600) {
         // Perfect timing - clicked quickly after target appeared
+        playSound('perfect');
         setScore((prev) => {
           const newScore = prev + 10;
           scoreRef.current = newScore; // Update ref with latest score
@@ -163,6 +275,7 @@ export default function GamePage() {
         setFeedbackType("perfect");
       } else if (timeSinceTargetStart <= 1000) {
         // Good timing - clicked within window but not perfect
+        playSound('good');
         setScore((prev) => {
           const newScore = prev + 5;
           scoreRef.current = newScore; // Update ref with latest score
@@ -172,11 +285,13 @@ export default function GamePage() {
         setFeedbackType("good");
       } else {
         // Too late - target is about to change
+        playSound('miss');
         setFeedback("Too late! Tap faster!");
         setFeedbackType("miss");
       }
     } else {
       // Wrong button
+      playSound('miss');
       setFeedback("Miss! Tap the glowing button!");
       setFeedbackType("miss");
     }
@@ -185,7 +300,45 @@ export default function GamePage() {
       setFeedback("");
       setFeedbackType("");
     }, 800);
-  };
+  }, [gameActive, currentTarget]);
+
+  // Keyboard event handler
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Only handle keyboard input when game is active
+      if (!gameActive) return;
+
+      // Prevent default behavior for game keys
+      const key = event.key;
+      
+      // Map keys to buttons: 1,2,3,4 or Arrow keys or WASD
+      let buttonNumber: number | null = null;
+      
+      if (key === '1' || key === 'ArrowLeft' || key === 'a' || key === 'A') {
+        buttonNumber = 1;
+      } else if (key === '2' || key === 'ArrowUp' || key === 'w' || key === 'W') {
+        buttonNumber = 2;
+      } else if (key === '3' || key === 'ArrowRight' || key === 'd' || key === 'D') {
+        buttonNumber = 3;
+      } else if (key === '4' || key === 'ArrowDown' || key === 's' || key === 'S') {
+        buttonNumber = 4;
+      }
+
+      // If valid key pressed, trigger button click
+      if (buttonNumber !== null) {
+        event.preventDefault();
+        handleButtonClick(buttonNumber);
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('keydown', handleKeyPress);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [gameActive, handleButtonClick]);
 
   useEffect(() => {
     return () => {
@@ -363,6 +516,12 @@ export default function GamePage() {
               <p className="mt-1">Tap the <span className="text-yellow-400 font-bold">glowing button</span> quickly to score points.</p>
               <p className="mt-1">Perfect timing (0-600ms) = 10 points</p>
               <p className="mt-1">Good timing (600-1000ms) = 5 points</p>
+              <p className="mt-2 pt-2 border-t border-white/20">
+                <span className="text-yellow-400 font-bold">Keyboard Controls:</span>
+              </p>
+              <p className="mt-1 text-white/80">
+                Use <span className="text-yellow-400 font-bold">1, 2, 3, 4</span> or <span className="text-yellow-400 font-bold">Arrow Keys</span> or <span className="text-yellow-400 font-bold">WASD</span>
+              </p>
             </div>
           )}
           {!gameActive && score > 0 && (

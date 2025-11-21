@@ -338,7 +338,8 @@ export default function SubmitScorePage() {
             </motion.div>
           )}
 
-          {playerScore !== null && playerScore >= minThreshold && (
+          {/* Claim Rewards button - Hidden for now */}
+          {false && playerScore !== null && playerScore >= minThreshold && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}

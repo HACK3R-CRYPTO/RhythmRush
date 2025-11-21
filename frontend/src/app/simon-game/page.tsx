@@ -27,15 +27,19 @@ export default function SimonGamePage() {
   const returnUrl = '/submit-score';
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scoreSubmitted, setScoreSubmitted] = useState(false);
   const [gamePattern, setGamePattern] = useState<string[]>([]);
   const [userPattern, setUserPattern] = useState<string[]>([]);
-  const [level, setLevel] = useState(0);
+  const [sequencesCompleted, setSequencesCompleted] = useState(0);
+  const [score, setScore] = useState(0);
   const [gameActive, setGameActive] = useState(false);
   const [isShowingSequence, setIsShowingSequence] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [startTime, setStartTime] = useState<number>(0);
   
   const scoreRef = useRef<number>(0);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+  const sequenceTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
   // Initialize audio files
   useEffect(() => {
@@ -45,11 +49,20 @@ export default function SimonGamePage() {
     audioRefs.current['wrong'] = new Audio('/sounds/wrong.mp3');
   }, []);
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      sequenceTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    };
+  }, []);
+
   const playSound = (color: string) => {
     const audio = audioRefs.current[color];
     if (audio) {
       audio.currentTime = 0;
-      audio.play().catch(err => console.error('Audio play failed:', err));
+      audio.play().catch(() => {
+        // Silently fail - game continues without sound
+      });
     }
   };
 
@@ -59,61 +72,141 @@ export default function SimonGamePage() {
       button.classList.add('pressed');
       setTimeout(() => {
         button.classList.remove('pressed');
-      }, 200);
+      }, 150);
     }
+  };
+
+  const showSequence = (pattern: string[]) => {
+    if (pattern.length === 0) return;
+    
+    setIsShowingSequence(true);
+    setUserPattern([]); // Reset user pattern
+    
+    console.log('Showing sequence:', pattern, 'Game active:', gameActive);
+    
+    // Flash each button ONE AT A TIME using setTimeout chaining
+    pattern.forEach((color, index) => {
+      const timeout = setTimeout(() => {
+        const button = document.getElementById(color);
+        console.log(`Flashing button ${index + 1}/${pattern.length}:`, color, button ? 'found' : 'NOT FOUND', 'Game active:', gameActive);
+        
+        if (button) {
+          // Force remove any existing classes that might interfere
+          button.classList.remove('pressed');
+          
+          // Remove opacity class that makes buttons dim during sequence
+          button.classList.remove('opacity-50');
+          
+          // Make button flash VERY brightly and visibly
+          // Use direct style assignment to override everything
+          button.style.cssText = `
+            opacity: 0.2 !important;
+            filter: brightness(5) saturate(2) !important;
+            transform: scale(1.2) !important;
+            box-shadow: 0 0 50px white, 0 0 80px rgba(255,255,255,1), inset 0 0 30px rgba(255,255,255,0.8) !important;
+            z-index: 100 !important;
+            transition: all 200ms ease-in-out !important;
+          `;
+          playSound(color);
+          
+          console.log('Button flashed:', color, button.style.cssText);
+          
+          // Flash back to normal after visible flash
+          setTimeout(() => {
+            if (button) {
+              // Restore normal styles
+              button.style.cssText = `
+                opacity: 1 !important;
+                filter: brightness(1) saturate(1) !important;
+                transform: scale(1) !important;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+                z-index: 1 !important;
+                transition: all 200ms ease-in-out !important;
+              `;
+              
+              // Re-add opacity class if sequence is still showing
+              if (isShowingSequence) {
+                button.classList.add('opacity-50');
+              }
+            }
+          }, 600);
+        } else {
+          console.error('Button not found:', color);
+        }
+      }, index * 1000); // 1000ms (1 second) delay between each button flash
+      
+      sequenceTimeoutsRef.current.push(timeout);
+    });
+    
+    // Allow user input after entire sequence is shown
+    const finalTimeout = setTimeout(() => {
+      console.log('Sequence complete, allowing user input');
+      setIsShowingSequence(false);
+    }, pattern.length * 1000 + 800);
+    sequenceTimeoutsRef.current.push(finalTimeout);
   };
 
   const nextSequence = () => {
-    setIsShowingSequence(true);
-    setUserPattern([]);
-    const newLevel = level + 1;
-    setLevel(newLevel);
-    
-    // Score is based on level reached
-    scoreRef.current = newLevel * 10; // 10 points per level
-    
-    const randomColor = BUTTON_COLORS[Math.floor(Math.random() * 4)];
+    // Add one new random color to the pattern
+    const randomColor = BUTTON_COLORS[Math.floor(Math.random() * BUTTON_COLORS.length)];
     const newPattern = [...gamePattern, randomColor];
     setGamePattern(newPattern);
 
-    // Show sequence with delay between each button
-    newPattern.forEach((color, index) => {
-      setTimeout(() => {
-        const button = document.getElementById(color);
-        if (button) {
-          button.style.opacity = '0.5';
-          playSound(color);
-          setTimeout(() => {
-            button.style.opacity = '1';
-          }, 200);
-        }
-      }, (index + 1) * 600);
-    });
+    console.log('Next sequence, pattern:', newPattern);
 
+    // Show the FULL sequence replay immediately (all buttons, one at a time)
+    // Small delay to ensure state is updated
     setTimeout(() => {
-      setIsShowingSequence(false);
-    }, newPattern.length * 600 + 300);
+      showSequence(newPattern);
+    }, 100);
   };
 
-  const checkAnswer = (index: number) => {
-    if (gamePattern[index] === userPattern[index]) {
-      if (userPattern.length === gamePattern.length) {
-        // Correct sequence completed
+  const checkAnswer = (currentUserPattern: string[]) => {
+    const currentIndex = currentUserPattern.length - 1;
+    
+    // Check if the clicked color matches the expected color at this position
+    if (gamePattern[currentIndex] === currentUserPattern[currentIndex]) {
+      // If user has completed the full sequence
+      if (currentUserPattern.length === gamePattern.length) {
+        // Correct sequence completed!
+        const newSequences = sequencesCompleted + 1;
+        setSequencesCompleted(newSequences);
+        
+        // Calculate score: sequences completed * 10 + speed bonus
+        const timeElapsed = Date.now() - startTime;
+        const speedBonus = Math.max(0, Math.floor((60000 - timeElapsed) / 1000)); // Bonus for speed
+        const newScore = newSequences * 10 + speedBonus;
+        
+        scoreRef.current = newScore;
+        setScore(newScore);
+        
+        // Start next sequence immediately
         setTimeout(() => {
           nextSequence();
-        }, 1000);
+        }, 500);
       }
+      // Otherwise, wait for next click
     } else {
-      // Wrong answer
-      playSound('wrong');
-      setGameOver(true);
-      setGameActive(false);
-      
-      // Submit score after showing game over
-      setTimeout(() => {
-        submitScoreToBlockchain(scoreRef.current);
-      }, 2000);
+      // Wrong answer - game over
+      handleGameOver();
     }
+  };
+
+  const handleGameOver = () => {
+    playSound('wrong');
+    setGameOver(true);
+    setGameActive(false);
+    setIsShowingSequence(false);
+    setScoreSubmitted(false); // Reset submission status
+    
+    // Clear all timeouts
+    sequenceTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    sequenceTimeoutsRef.current = [];
+    
+    // Submit score after showing game over
+    setTimeout(() => {
+      submitScoreToBlockchain(scoreRef.current);
+    }, 1500);
   };
 
   const handleButtonClick = (color: string) => {
@@ -124,29 +217,55 @@ export default function SimonGamePage() {
     
     playSound(color);
     animateButton(color);
-    checkAnswer(newUserPattern.length - 1);
+    
+    // Check answer immediately
+    checkAnswer(newUserPattern);
   };
 
   const startGame = () => {
+    // Don't allow starting if score hasn't been submitted after game over
+    if (gameOver && !scoreSubmitted) {
+      return;
+    }
+    
+    // Reset all game state
     setGamePattern([]);
     setUserPattern([]);
-    setLevel(0);
+    setSequencesCompleted(0);
+    setScore(0);
     setGameOver(false);
+    setScoreSubmitted(false);
     setGameActive(true);
+    setIsShowingSequence(false);
+    setStartTime(Date.now());
     scoreRef.current = 0;
+    
+    // Clear all timeouts
+    sequenceTimeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    sequenceTimeoutsRef.current = [];
+    
+    // Start first sequence immediately (no delay)
     nextSequence();
   };
 
   const submitScoreToBlockchain = async (finalScore: number) => {
+    console.log('Submitting score:', finalScore);
+    setIsSubmitting(true);
+    
     if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
+      // Store score in sessionStorage for later submission
       sessionStorage.setItem('rhythmRush_score', finalScore.toString());
       sessionStorage.setItem('rhythmRush_score_timestamp', Date.now().toString());
-      router.push(returnUrl);
+      setScoreSubmitted(true); // Mark as submitted
+      setIsSubmitting(false);
+      // Redirect after delay
+      setTimeout(() => {
+        router.push(returnUrl);
+      }, 2000);
       return;
     }
 
     try {
-      setIsSubmitting(true);
       const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
       const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
@@ -161,14 +280,23 @@ export default function SimonGamePage() {
 
       sessionStorage.removeItem('rhythmRush_score');
       sessionStorage.removeItem('rhythmRush_score_timestamp');
+      setScoreSubmitted(true); // Mark as submitted
       
-      router.push(returnUrl);
+      // Redirect after showing success
+      setTimeout(() => {
+        router.push(returnUrl);
+      }, 2000);
     } catch (error: any) {
       console.error("Error submitting score:", error);
       toast.error(error?.message || "Failed to submit score");
+      // Store score for manual submission
       sessionStorage.setItem('rhythmRush_score', finalScore.toString());
       sessionStorage.setItem('rhythmRush_score_timestamp', Date.now().toString());
-      router.push(returnUrl);
+      setScoreSubmitted(true); // Mark as submitted (will be done manually)
+      // Redirect to submit page
+      setTimeout(() => {
+        router.push(returnUrl);
+      }, 2000);
     } finally {
       setIsSubmitting(false);
     }
@@ -198,29 +326,31 @@ export default function SimonGamePage() {
       >
         {/* Title */}
         <h1 
-          className="text-white font-bold mb-4 text-center"
+          className="text-white font-bold mb-2 text-center"
           style={{ 
-            fontSize: 'clamp(20px, 5vw, 28px)',
+            fontSize: 'clamp(18px, 4vw, 24px)',
             fontFamily: "'Press Start 2P', monospace",
             textShadow: '2px 2px 4px rgba(0,0,0,0.5)'
           }}
         >
           {gameOver 
-            ? `Game Over! Level ${level}` 
+            ? `Game Over!` 
             : gameActive 
-              ? `Level ${level}` 
-              : 'Press Start'}
+              ? isShowingSequence 
+                ? `Watch...` 
+                : `Your Turn!` 
+              : 'Simon Game'}
         </h1>
 
         {/* Score Display */}
         {gameActive && (
-          <div className="text-yellow-400 font-bold mb-4" style={{ fontSize: 'clamp(16px, 4vw, 20px)' }}>
-            Score: {scoreRef.current}
+          <div className="text-yellow-400 font-bold mb-2" style={{ fontSize: 'clamp(14px, 3.5vw, 18px)' }}>
+            Score: {score} | Sequences: {sequencesCompleted}
           </div>
         )}
 
         {/* Game Container */}
-        <div className="grid grid-cols-2 gap-3 max-w-[320px] w-full">
+        <div className="grid grid-cols-2 gap-3 max-w-[320px] w-full mb-4">
           {BUTTON_COLORS.map((color) => (
             <motion.button
               key={color}
@@ -229,33 +359,48 @@ export default function SimonGamePage() {
               disabled={!gameActive || isShowingSequence || gameOver}
               whileHover={gameActive && !isShowingSequence && !gameOver ? { scale: 1.05 } : {}}
               whileTap={gameActive && !isShowingSequence && !gameOver ? { scale: 0.95 } : {}}
+              animate={isShowingSequence ? {} : {}}
               className={`
                 aspect-square rounded-3xl border-4 border-black
-                transition-all duration-200
                 ${color === 'red' ? 'bg-red-500' : ''}
                 ${color === 'blue' ? 'bg-blue-500' : ''}
                 ${color === 'green' ? 'bg-green-500' : ''}
                 ${color === 'yellow' ? 'bg-yellow-400' : ''}
-                ${!gameActive || isShowingSequence || gameOver ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 cursor-pointer'}
+                ${!gameActive || gameOver ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 cursor-pointer'}
               `}
               style={{
-                boxShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                boxShadow: '0 4px 8px rgba(0,0,0,0.3)',
+                position: 'relative',
+                zIndex: 1
               }}
             />
           ))}
         </div>
 
+        {/* Status Message */}
+        {isShowingSequence && (
+          <div className="text-white/90 mb-2 text-center font-bold" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>
+            Watch the sequence...
+          </div>
+        )}
+        {gameActive && !isShowingSequence && !gameOver && (
+          <div className="text-green-400 mb-2 text-center font-bold" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>
+            Repeat the sequence!
+          </div>
+        )}
+
         {/* Instructions */}
         {!gameActive && !gameOver && (
-          <div className="mt-6 text-white/80 text-center px-4" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>
-            <p className="mb-2">Watch the sequence and repeat it!</p>
-            <p>Each level adds one more color.</p>
+          <div className="mt-4 text-white/80 text-center px-4" style={{ fontSize: 'clamp(11px, 2.5vw, 13px)' }}>
+            <p className="mb-1">Watch the sequence flash</p>
+            <p>Repeat it as fast as you can!</p>
+            <p className="mt-2 text-yellow-400">Score = Sequences × 10 + Speed Bonus</p>
           </div>
         )}
 
         {/* Start/Game Over Button */}
-        <div className="mt-6 w-full max-w-[320px]">
-          {!gameActive && (
+        <div className="mt-4 w-full max-w-[320px]">
+          {!gameActive && !gameOver && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -276,11 +421,42 @@ export default function SimonGamePage() {
               <p className="text-red-400 font-bold mb-2" style={{ fontSize: 'clamp(16px, 4vw, 20px)' }}>
                 Game Over!
               </p>
-              <p className="text-white mb-4" style={{ fontSize: 'clamp(14px, 3.5vw, 16px)' }}>
-                Final Score: {scoreRef.current} points
+              <p className="text-white mb-2" style={{ fontSize: 'clamp(14px, 3.5vw, 16px)' }}>
+                Final Score: {score} points
               </p>
+              <p className="text-white/80 mb-4 text-sm">
+                Sequences Completed: {sequencesCompleted}
+              </p>
+              
               {isSubmitting && (
-                <p className="text-yellow-400 text-sm">Submitting score...</p>
+                <div className="mb-4">
+                  <p className="text-yellow-400 text-sm mb-2 font-bold">Submitting score...</p>
+                  <p className="text-white/60 text-xs">Please wait...</p>
+                </div>
+              )}
+              
+              {!isSubmitting && !scoreSubmitted && (
+                <div className="mb-4">
+                  <p className="text-yellow-400 text-sm mb-2 font-bold">Submitting score...</p>
+                  <p className="text-white/60 text-xs">Please wait...</p>
+                </div>
+              )}
+              
+              {scoreSubmitted && (
+                <div className="mb-4">
+                  <p className="text-green-400 text-sm mb-2 font-bold">✓ Score submitted!</p>
+                  <p className="text-white/60 text-xs">Redirecting...</p>
+                </div>
+              )}
+              
+              {!isSubmitting && !scoreSubmitted && (
+                <motion.button
+                  disabled={true}
+                  className="w-full bg-gray-500 text-white font-bold py-3 rounded-xl shadow-lg opacity-50 cursor-not-allowed"
+                  style={{ fontSize: 'clamp(14px, 3.5vw, 16px)' }}
+                >
+                  Wait for Score Submission...
+                </motion.button>
               )}
             </motion.div>
           )}
@@ -291,9 +467,12 @@ export default function SimonGamePage() {
         .pressed {
           opacity: 0.5 !important;
           transform: scale(0.95);
+          box-shadow: 0 0 20px white !important;
+        }
+        button[id] {
+          transition: opacity 200ms ease-in-out, filter 200ms ease-in-out;
         }
       `}</style>
     </IPhoneFrame>
   );
 }
-
