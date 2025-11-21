@@ -54,7 +54,7 @@ export default function LeaderboardPage() {
   }, []);
 
   const fetchLeaderboard = async () => {
-    if (!window.ethereum) {
+    if (!(typeof window !== 'undefined' && (window as any).ethereum)) {
       console.log("No ethereum provider found");
       setIsLoading(false);
       return;
@@ -62,7 +62,7 @@ export default function LeaderboardPage() {
 
     try {
       console.log("Fetching leaderboard...");
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
       
       const length = await rewardsContract.getLeaderboardLength();

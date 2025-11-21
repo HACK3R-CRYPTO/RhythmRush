@@ -98,10 +98,10 @@ export default function SubmitScorePage() {
   }, [account]);
 
   const fetchPlayerScore = async () => {
-    if (!account?.address || !window.ethereum) return;
+    if (!account?.address || !(typeof window !== 'undefined' && (window as any).ethereum)) return;
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
       const score = await rewardsContract.playerScores(account.address);
       setPlayerScore(Number(score));
@@ -111,10 +111,10 @@ export default function SubmitScorePage() {
   };
 
   const fetchMinThreshold = async () => {
-    if (!window.ethereum) return;
+    if (!(typeof window !== 'undefined' && (window as any).ethereum)) return;
 
     try {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
       const threshold = await rewardsContract.minScoreThreshold();
       setMinThreshold(Number(threshold));
@@ -126,7 +126,7 @@ export default function SubmitScorePage() {
   };
 
   const handleSubmitScore = useCallback(async () => {
-    if (!account || !window.ethereum) {
+    if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
       toast.error("Please connect your wallet");
       return;
     }
@@ -144,7 +144,7 @@ export default function SubmitScorePage() {
 
     try {
       setIsSubmitting(true);
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
       const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
       const rewardsWithSigner = rewardsContract.connect(signer);
@@ -199,14 +199,14 @@ export default function SubmitScorePage() {
   }, [scoreFromStorage, account, thresholdLoaded, hasAutoSubmitted, isSubmitting, minThreshold, handleSubmitScore]);
 
   const handleClaimRewards = async () => {
-    if (!account || !window.ethereum) {
+    if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
       toast.error("Please connect your wallet");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
       const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
       const rewardsWithSigner = rewardsContract.connect(signer);
@@ -339,7 +339,7 @@ export default function SubmitScorePage() {
           )}
 
           {/* Claim Rewards button - Hidden for now */}
-          {false && playerScore !== null && playerScore >= minThreshold && (
+          {false && playerScore !== null && (playerScore as number) >= minThreshold && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
