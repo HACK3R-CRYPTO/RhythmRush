@@ -204,7 +204,4 @@ NEXT_PUBLIC_CHAIN_ID=11142220
 - Safari
 - Mobile browsers (iOS Safari, Chrome Mobile)
 
-## License
-
-MIT License. See root LICENSE file for details.
 
