@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 
 interface iPhoneFrameProps {
   children: ReactNode;
@@ -13,6 +13,56 @@ export default function IPhoneFrame({
   bottomNavContent,
   backgroundClassName = "bg-rhythmrush" 
 }: iPhoneFrameProps) {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      // Check if screen width is mobile (less than 768px) or if it's a touch device
+      const isMobileScreen = window.innerWidth < 768;
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      setIsMobile(isMobileScreen || (isTouchDevice && window.innerWidth < 1024));
+    };
+
+    // Check immediately
+    checkMobile();
+    
+    // Listen for resize events
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, []);
+
+  // On mobile, render without frame
+  if (isMobile) {
+    return (
+      <div className={`min-h-screen w-full ${backgroundClassName}`}>
+        {/* Status Bar for mobile */}
+        {statusBarContent && (
+          <div className="w-full h-[44px] bg-transparent flex items-center justify-between px-4">
+            {statusBarContent}
+          </div>
+        )}
+        
+        {/* Main Content */}
+        <div className={`relative w-full min-h-[calc(100vh-44px)] ${backgroundClassName} overflow-auto`}>
+          {children}
+        </div>
+
+        {/* Bottom Navigation */}
+        {bottomNavContent && (
+          <div className="fixed bottom-0 left-0 right-0 bg-white pt-2 pb-6 rounded-t-3xl shadow-lg">
+            {bottomNavContent}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // On desktop, render with iPhone frame
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-4">
       <div className="relative mx-auto bg-black rounded-[60px] h-[860px] w-[420px] shadow-2xl overflow-hidden border-[14px] border-black">
