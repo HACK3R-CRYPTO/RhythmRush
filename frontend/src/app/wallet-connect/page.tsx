@@ -32,37 +32,37 @@ export default function WalletConnect() {
 
   const statusBarContent = (
     <>
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-        <div className="text-white text-xs font-medium">RhythmRush</div>
+      <div className="status-bar-item">
+        <div className="status-indicator bg-green-400"></div>
+        <div>RhythmRush</div>
       </div>
-      <div className="text-white text-xs">9:41</div>
+      <div className="status-bar-item">9:41</div>
     </>
   );
 
   return (
     <IPhoneFrame backgroundClassName="bg-rhythmrush" statusBarContent={statusBarContent}>
-      <div className="h-full w-full flex flex-col items-center justify-center p-6">
-        <div className="text-center mb-12">
+      <div className="page-container">
+        <div className="text-center">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="mb-6"
+            className="logo-container"
           >
-            <div className="w-[100px] h-[100px] bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full shadow-2xl flex items-center justify-center mx-auto">
-              <span className="text-5xl">🎵</span>
-            </div>
+            <span className="logo-icon">🎵</span>
           </motion.div>
           
-          <h1 className="text-5xl font-bold mb-2">
+          <h1 className="title-main">
             <span className="text-rhythmrush-gold">RHYTHM</span>
             <span className="text-white">RUSH</span>
           </h1>
-          <p className="text-white/80 text-lg">Connect your wallet to start</p>
+          <p className="text-white/80" style={{ fontSize: 'var(--text-lg)' }}>
+            Connect your wallet to start
+          </p>
         </div>
 
-        <div className="w-full max-w-[340px] space-y-4">
+        <div className="content-container">
           <div className="text-center">
             <p className="text-white text-lg mb-4 font-semibold">CONNECT YOUR WALLET</p>
             <div className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-2xl p-6 border border-white/20 transition-all">

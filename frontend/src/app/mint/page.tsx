@@ -244,13 +244,13 @@ export default function MintPage() {
 
   const statusBarContent = (
     <>
-      <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
-        <div className="text-white text-xs truncate max-w-[150px]">
+      <div className="status-bar-item">
+        <div className={`status-indicator ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
+        <div className="truncate max-w-[150px]">
           {account?.address ? `${account.address.substring(0, 6)}...${account.address.substring(account.address.length - 4)}` : "Not Connected"}
         </div>
       </div>
-      <div className="text-white text-xs">9:41</div>
+      <div className="status-bar-item">9:41</div>
     </>
   );
 
@@ -267,21 +267,23 @@ export default function MintPage() {
       )}
 
       <IPhoneFrame backgroundClassName="bg-rhythmrush" statusBarContent={statusBarContent}>
-        <div className="h-full w-full flex flex-col items-center justify-center p-6 overflow-y-auto">
+        <div className="page-container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-[340px]"
+            className="content-container"
           >
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-2">
+            <div className="text-center">
+              <h1 className="title-section">
                 <span className="text-rhythmrush-gold">MINT</span>
                 <span className="text-white"> GEM</span>
               </h1>
-              <p className="text-white/80">Get your RhythmRush Gem NFT</p>
+              <p className="text-white/80" style={{ fontSize: 'var(--text-base)' }}>
+                Get your RhythmRush Gem NFT
+              </p>
             </div>
 
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-white/20">
+            <div className="card-blur">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-white font-semibold">RUSH Balance:</span>
                 <span className="text-rhythmrush-gold font-bold">{parseFloat(rushBalance).toFixed(2)} RUSH</span>

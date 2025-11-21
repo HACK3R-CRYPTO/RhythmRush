@@ -196,11 +196,11 @@ export default function GamePage() {
 
   const statusBarContent = (
     <>
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-        <div className="text-white text-xs">RhythmRush</div>
+      <div className="status-bar-item">
+        <div className="status-indicator bg-green-400"></div>
+        <div>RhythmRush</div>
       </div>
-      <div className="text-white text-xs">9:41</div>
+      <div className="status-bar-item">9:41</div>
     </>
   );
 

@@ -151,30 +151,31 @@ export default function PlayPage() {
 
   const statusBarContent = (
     <>
-      <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${
+      <div className="status-bar-item">
+        <div className={`status-indicator ${
           wallet && account 
             ? (isMinted ? 'bg-green-400' : 'bg-yellow-400') 
             : 'bg-red-400'
         }`}></div>
-        <div className="text-white text-xs">
+        <div>
           {wallet && account 
             ? (isMinted ? `${gemBalance} Gem${gemBalance > 1 ? 's' : ''}` : "No Gem")
             : "Not Connected"}
         </div>
       </div>
-      <div className="text-white text-xs">9:41</div>
+      <div className="status-bar-item">9:41</div>
     </>
   );
 
   return (
     <IPhoneFrame backgroundClassName="bg-rhythmrush" statusBarContent={statusBarContent}>
-      <div className="h-full w-full flex flex-col items-center justify-center p-6">
+      <div className="page-container">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-12"
+          className="text-center"
+          style={{ marginBottom: 'clamp(16px, 4vh, 32px)' }}
         >
           <motion.div
             animate={{
@@ -186,21 +187,38 @@ export default function PlayPage() {
               repeat: Infinity,
               ease: "easeInOut"
             }}
-            className="mb-6"
+            style={{ marginBottom: 'clamp(12px, 3vh, 24px)' }}
           >
-            <div className="w-[120px] h-[120px] bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full shadow-2xl flex items-center justify-center mx-auto">
-              <span className="text-6xl">🎵</span>
+            <div 
+              className="bg-gradient-to-br from-yellow-300 to-yellow-500 rounded-full shadow-2xl flex items-center justify-center mx-auto"
+              style={{
+                width: 'clamp(80px, 20vw, 120px)',
+                height: 'clamp(80px, 20vw, 120px)'
+              }}
+            >
+              <span style={{ fontSize: 'clamp(40px, 10vw, 60px)' }}>🎵</span>
             </div>
           </motion.div>
 
-          <h1 className="text-5xl font-bold mb-2">
+          <h1 
+            className="font-bold"
+            style={{ 
+              fontSize: 'clamp(32px, 8vw, 48px)',
+              marginBottom: 'clamp(4px, 1vh, 8px)'
+            }}
+          >
             <span className="text-rhythmrush-gold">RHYTHM</span>
             <span className="text-white">RUSH</span>
           </h1>
-          <p className="text-white/80 text-lg">Ready to play?</p>
+          <p 
+            className="text-white/80"
+            style={{ fontSize: 'clamp(14px, 3.5vw, 18px)' }}
+          >
+            Ready to play?
+          </p>
         </motion.div>
 
-        <div className="w-full max-w-[340px] space-y-4">
+        <div className="content-container">
           {!wallet && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -240,46 +258,56 @@ export default function PlayPage() {
 
           {wallet && account && (
             <>
-              {isChecking && (
-                <div className="text-center text-white/60 text-sm mb-2">
-                  Checking Gem balance...
-                </div>
-              )}
               {!isChecking && (
                 <button
                   onClick={checkGemBalance}
-                  className="text-white/60 text-xs mb-2 hover:text-white transition"
+                  className="text-white/60 text-xs hover:text-white transition self-end"
+                  style={{ fontSize: 'clamp(10px, 2.5vw, 12px)' }}
                 >
-                  🔄 Refresh Balance
+                  🔄 Refresh
                 </button>
               )}
+              
               {/* Game Selection */}
               {isMinted ? (
-                <div className="w-full space-y-3">
-                  <p className="text-white/80 text-sm text-center mb-2">Choose a game:</p>
+                <div className="w-full space-y-2">
                   {Object.values(GAMES).map((game) => (
                     <motion.button
                       key={game.path}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleGameSelect(game.path)}
                       disabled={isChecking}
-                      className="w-full py-4 rounded-xl font-bold text-lg transition shadow-lg bg-rhythmrush-gold hover:bg-yellow-400 text-black flex items-center justify-center gap-2"
+                      className="btn-primary flex items-center gap-3"
+                      style={{
+                        paddingLeft: 'var(--spacing-lg)',
+                        paddingRight: 'var(--spacing-lg)'
+                      }}
                     >
-                      <span className="text-2xl">{game.icon}</span>
-                      <div className="text-left">
+                      <span style={{ fontSize: 'clamp(24px, 6vw, 32px)' }}>{game.icon}</span>
+                      <div className="text-left flex-1">
                         <div className="font-bold">{game.name}</div>
-                        <div className="text-xs opacity-70">{game.description}</div>
+                        <div 
+                          className="opacity-70"
+                          style={{ fontSize: 'clamp(10px, 2.5vw, 12px)' }}
+                        >
+                          {game.description}
+                        </div>
                       </div>
                     </motion.button>
                   ))}
                 </div>
               ) : (
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   disabled={isChecking}
-                  className="w-full py-4 rounded-xl font-bold text-lg transition shadow-lg bg-gray-500 text-white cursor-not-allowed"
+                  className="w-full rounded-xl font-bold transition shadow-lg bg-gray-500 text-white cursor-not-allowed"
+                  style={{
+                    paddingTop: 'clamp(12px, 3vh, 16px)',
+                    paddingBottom: 'clamp(12px, 3vh, 16px)',
+                    fontSize: 'clamp(14px, 3.5vw, 16px)'
+                  }}
                 >
                   MINT GEM TO PLAY
                 </motion.button>
@@ -287,85 +315,28 @@ export default function PlayPage() {
             </>
           )}
 
-          {isMinted && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-blue-500/20 border border-blue-500/50 rounded-xl p-4 mb-4"
-            >
-              <p className="text-blue-300 font-semibold text-sm text-center">
-                💎 You own {gemBalance} Gem{gemBalance > 1 ? 's' : ''} - Ready to play!
-              </p>
-              <p className="text-white/70 text-xs text-center mt-1">
-                Choose from multiple games above
-              </p>
-              <p className="text-white/70 text-xs text-center mt-1">
-                Score automatically submitted after game
-              </p>
-            </motion.div>
-          )}
-
-          <div className="grid grid-cols-2 gap-4">
+          <div 
+            className="grid grid-cols-2 gap-3 w-full"
+            style={{ marginTop: 'var(--spacing-md)' }}
+          >
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/submit-score')}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold py-3 rounded-xl transition border border-white/20"
+              className="btn-secondary"
             >
-              SUBMIT SCORE
+              SCORE
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/leaderboard')}
-              className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold py-3 rounded-xl transition border border-white/20"
+              className="btn-secondary"
             >
               LEADERBOARD
             </motion.button>
           </div>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleMintMore}
-            className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold py-3 rounded-xl transition border border-white/20 mt-4"
-          >
-            MINT MORE GEMS
-          </motion.button>
-
-          {wallet && account && (
-            <>
-              {isMinted && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 text-center"
-                >
-                  <p className="text-green-300 font-semibold">
-                    ✅ You own {gemBalance} Gem{gemBalance > 1 ? 's' : ''}!
-                  </p>
-                  <p className="text-white/80 text-sm mt-1">
-                    You're ready to play and earn RUSH tokens
-                  </p>
-                </motion.div>
-              )}
-              {!isMinted && !isChecking && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-red-500/20 border border-red-500/50 rounded-xl p-4 text-center"
-                >
-                  <p className="text-red-300 font-semibold">
-                    ❌ No Gems found
-                  </p>
-                  <p className="text-white/80 text-sm mt-1">
-                    Mint a Gem to start playing
-                  </p>
-                </motion.div>
-              )}
-            </>
-          )}
         </div>
       </div>
     </IPhoneFrame>

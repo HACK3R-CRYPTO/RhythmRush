@@ -97,23 +97,25 @@ export default function LeaderboardPage() {
 
   const statusBarContent = (
     <>
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-        <div className="text-white text-xs">Leaderboard</div>
+      <div className="status-bar-item">
+        <div className="status-indicator bg-green-400"></div>
+        <div>Leaderboard</div>
       </div>
-      <div className="text-white text-xs">9:41</div>
+      <div className="status-bar-item">9:41</div>
     </>
   );
 
   return (
     <IPhoneFrame backgroundClassName="bg-rhythmrush" statusBarContent={statusBarContent}>
-      <div className="h-full w-full flex flex-col p-6 overflow-y-auto">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold mb-2">
+      <div className="page-container">
+        <div className="text-center">
+          <h1 className="title-section">
             <span className="text-rhythmrush-gold">TOP</span>
             <span className="text-white"> PLAYERS</span>
           </h1>
-          <p className="text-white/80">Compete for RUSH rewards</p>
+          <p className="text-white/80" style={{ fontSize: 'var(--text-base)' }}>
+            Compete for RUSH rewards
+          </p>
         </div>
 
         {isLoading ? (
@@ -135,9 +137,10 @@ export default function LeaderboardPage() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`bg-white/10 backdrop-blur-sm rounded-xl p-4 border ${
-                    isCurrentUser ? 'border-rhythmrush-gold border-2' : 'border-white/20'
+                  className={`card-blur ${
+                    isCurrentUser ? 'border-rhythmrush-gold border-2' : ''
                   }`}
+                  style={{ padding: 'var(--spacing-md)' }}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -164,28 +167,28 @@ export default function LeaderboardPage() {
 
         <div className="mt-6 space-y-3">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => fetchLeaderboard()}
-            className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold py-3 rounded-xl transition border border-white/20"
+            className="btn-secondary"
           >
             REFRESH
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => router.push('/submit-score')}
-            className="w-full bg-rhythmrush-gold hover:bg-yellow-400 text-black font-bold py-3 rounded-xl transition"
+            className="btn-primary"
           >
             SUBMIT SCORE
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => router.push('/play')}
-            className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold py-3 rounded-xl transition border border-white/20"
+            className="btn-secondary"
           >
             BACK TO PLAY
           </motion.button>

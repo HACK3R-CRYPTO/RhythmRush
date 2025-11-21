@@ -56,7 +56,7 @@ export default function SubmitScorePage() {
   const [score, setScore] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [playerScore, setPlayerScore] = useState<number | null>(null);
-  const [minThreshold, setMinThreshold] = useState<number>(100);
+  const [minThreshold, setMinThreshold] = useState<number>(10);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
   const [thresholdLoaded, setThresholdLoaded] = useState(false);
 
@@ -229,29 +229,31 @@ export default function SubmitScorePage() {
 
   const statusBarContent = (
     <>
-      <div className="flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-green-400"></div>
-        <div className="text-white text-xs">RhythmRush</div>
+      <div className="status-bar-item">
+        <div className="status-indicator bg-green-400"></div>
+        <div>RhythmRush</div>
       </div>
-      <div className="text-white text-xs">9:41</div>
+      <div className="status-bar-item">9:41</div>
     </>
   );
 
   return (
     <IPhoneFrame backgroundClassName="bg-rhythmrush" statusBarContent={statusBarContent}>
-      <div className="h-full w-full flex flex-col items-center justify-center p-6 overflow-y-auto">
+      <div className="page-container">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-[340px]"
+          className="content-container"
         >
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-2">
+          <div className="text-center">
+            <h1 className="title-section">
               <span className="text-rhythmrush-gold">SUBMIT</span>
               <span className="text-white"> SCORE</span>
             </h1>
             {!scoreFromStorage && (
-              <p className="text-white/80">Play the game to submit your score</p>
+              <p className="text-white/80" style={{ fontSize: 'var(--text-base)' }}>
+                Play the game to submit your score
+              </p>
             )}
           </div>
 
@@ -276,7 +278,7 @@ export default function SubmitScorePage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-white/20"
+              className="card-blur"
             >
               <div className="text-center">
                 <label className="text-white/80 text-sm mb-2 block">
@@ -311,7 +313,7 @@ export default function SubmitScorePage() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-white/20"
+              className="card-blur"
             >
               <div className="flex justify-between items-center">
                 <span className="text-white/80">Your Best Score:</span>
@@ -338,31 +340,32 @@ export default function SubmitScorePage() {
 
           {playerScore !== null && playerScore >= minThreshold && (
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleClaimRewards}
               disabled={isSubmitting}
-              className="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-500 text-white font-bold py-4 rounded-xl transition shadow-lg"
+              className="btn-primary"
+              style={{ background: '#10B981' }}
             >
               {isSubmitting ? "Claiming..." : "CLAIM RUSH REWARDS"}
             </motion.button>
           )}
 
-          <div className="mt-6 space-y-3">
+          <div className="space-y-3" style={{ marginTop: 'var(--spacing-md)' }}>
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/play')}
-              className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold py-3 rounded-xl transition border border-white/20"
+              className="btn-secondary"
             >
               BACK TO PLAY
             </motion.button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => router.push('/leaderboard')}
-              className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white font-semibold py-3 rounded-xl transition border border-white/20"
+              className="btn-secondary"
             >
               VIEW LEADERBOARD
             </motion.button>

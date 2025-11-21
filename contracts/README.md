@@ -128,7 +128,7 @@ Players submit scores after gameplay:
 rewardsContract.submitScore(score);
 ```
 
-Minimum score threshold: 100 points.
+Minimum score threshold: 10 points.
 
 ### Claiming Rewards
 

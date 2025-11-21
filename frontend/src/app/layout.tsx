@@ -1,5 +1,6 @@
 "use client";
 import "./globals.css";
+import "../styles/design-system.css";
 import { Toaster } from 'react-hot-toast';
 import { ThirdwebProvider } from "thirdweb/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -20,6 +21,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+      </head>
       <body suppressHydrationWarning={true}>
         <QueryClientProvider client={queryClient}>
           <ThirdwebProvider>
