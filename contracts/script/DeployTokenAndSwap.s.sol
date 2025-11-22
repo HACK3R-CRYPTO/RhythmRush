@@ -20,8 +20,8 @@ contract DeployTokenAndSwapScript is Script {
         console.log("RhythmRushToken (RUSH) deployed at:", address(rushToken));
         
         // Step 2: Deploy Swap contract
-        // cUSD address on Celo Sepolia: 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1
-        address cusdToken = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
+        // cUSD address on Celo Sepolia: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+        address cusdToken = 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b;
         RhythmRushSwap swap = new RhythmRushSwap(
             address(rushToken),
             cusdToken,

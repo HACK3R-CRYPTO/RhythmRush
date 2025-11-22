@@ -116,7 +116,7 @@ RhythmRushGem: 0xBdE05919CE1ee2E20502327fF74101A8047c37be
 
 RhythmRushRewards: 0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
 
-cUSD Token: 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1
+cUSD Token: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
 
 View contracts on Blockscout: https://celo-sepolia.blockscout.com/
 
@@ -257,7 +257,7 @@ await tx.wait();
 ### Buy RUSH Tokens with cUSD
 
 ```typescript
-const cusdAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1";
+const cusdAddress = "0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b";
 const cusdABI = [
   {
     constant: false,
@@ -315,7 +315,7 @@ Celo Sepolia Testnet:
 - Chain ID: 11142220
 - RPC: https://forno.celo-sepolia.celo-testnet.org/
 - Explorer: https://celo-sepolia.blockscout.com/
-- cUSD: 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1
+- cUSD: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
 
 Celo Mainnet:
 - Chain ID: 42220
