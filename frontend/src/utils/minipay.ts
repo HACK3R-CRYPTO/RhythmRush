@@ -6,9 +6,9 @@
 // Check if MiniPay wallet is available
 export function isMiniPayAvailable(): boolean {
   if (typeof window === 'undefined') return false;
-  
-  const hasEthereum = !!window.ethereum;
-  const isMiniPay = !!(window.ethereum && (window.ethereum as any).isMiniPay);
+
+  const hasEthereum = !!(window as any).ethereum;
+  const isMiniPay = !!((window as any).ethereum && ((window as any).ethereum as any).isMiniPay);
   
   // Debug logging
   if (hasEthereum) {
@@ -27,7 +27,7 @@ export async function getMiniPayAddress(): Promise<string | null> {
   if (!isMiniPayAvailable()) return null;
 
   try {
-    const accounts = await (window.ethereum as any).request({
+    const accounts = await ((window as any).ethereum as any).request({
       method: "eth_requestAccounts",
       params: [],
     });
@@ -72,8 +72,7 @@ export async function checkCUSDBalance(
       address as `0x${string}`,
     ]);
 
-    const balanceInWei = balanceInBigNumber.toString();
-    const balanceInEthers = formatEther(balanceInWei as `0x${string}`);
+    const balanceInEthers = formatEther(balanceInBigNumber);
 
     return balanceInEthers;
   } catch (error) {
