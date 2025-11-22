@@ -1,50 +1,46 @@
 # RhythmRush Smart Contracts
 
-Smart contracts for RhythmRush, a play-to-earn rhythm game on Celo blockchain. Players mint NFT Gems to access the game and earn RUSH tokens for top scores.
+Smart contracts for RhythmRush game. Deploy to Celo. Test locally. Verify on Blockscout.
 
-## Overview
+## What These Contracts Do
 
-This repository contains four main smart contracts:
+RhythmRushToken: ERC20 token for payments and rewards. Players use RUSH tokens to mint Gems. Top players earn RUSH rewards.
 
-- **RhythmRushToken (RUSH)** - ERC20 token for payments and rewards
-- **RhythmRushSwap** - Swap contract to buy RUSH tokens with CELO
-- **RhythmRushGem** - ERC721 NFT contract for game access tokens
-- **RhythmRushRewards** - Score tracking and reward distribution
+RhythmRushSwap: Buy RUSH tokens with CELO or cUSD. Exchange rates set by owner. Mints tokens directly to buyers.
+
+RhythmRushGem: ERC721 NFT contract. Players mint Gems to unlock games. One Gem costs 34 RUSH tokens.
+
+RhythmRushRewards: Tracks scores. Distributes rewards. Leaderboard management. Prize pool distribution.
 
 ## Prerequisites
 
-- [Foundry](https://book.getfoundry.sh/getting-started/installation) installed
-- A wallet with CELO for gas fees (testnet tokens available from faucets)
-- Basic knowledge of Solidity and smart contract development
+Install Foundry. Get CELO for gas fees. Have a wallet ready.
+
+Foundry installation: https://book.getfoundry.sh/getting-started/installation
 
 ## Installation
 
-1. Clone the repository:
+Clone the repository. Navigate to contracts folder. Install dependencies.
 
 ```bash
 git clone <repository-url>
 cd RhythmRush/contracts
-```
-
-2. Install dependencies:
-
-```bash
 forge install
 ```
 
-3. Build contracts:
+Build contracts:
 
 ```bash
 forge build
 ```
 
-4. Run tests:
+Run tests:
 
 ```bash
 forge test
 ```
 
-All tests should pass before deployment.
+All tests must pass before deployment.
 
 ## Configuration
 
@@ -56,49 +52,53 @@ TREASURY_ADDRESS=your_treasury_address
 ETHERSCAN_API_KEY=your_etherscan_api_key
 ```
 
-**Important:**
-- Private key must include `0x` prefix
+Important notes:
+- Private key must include 0x prefix
 - Treasury address receives initial 500M RUSH tokens
-- Etherscan API key works for both Celo Mainnet and Celo Sepolia
+- Etherscan API key works for Celo Mainnet and Celo Sepolia
 
 ## Get Testnet Tokens
 
-Before deploying to Celo Sepolia, get testnet tokens:
+Get testnet tokens before deploying:
 
-- [Celo Sepolia Faucet](https://faucet.celo.org/celo-sepolia)
-- [Google Cloud Faucet](https://cloud.google.com/application/web3/faucet/celo/sepolia)
+- Celo Sepolia Faucet: https://faucet.celo.org/celo-sepolia
+- Google Cloud Faucet: https://cloud.google.com/application/web3/faucet/celo/sepolia
 
 You need CELO for gas fees.
 
 ## Deployment
 
-### Deploy All Contracts to Celo Sepolia Testnet
+### Deploy All Contracts
+
+Deploy everything to Celo Sepolia:
 
 ```bash
 forge script script/Deploy.s.sol:DeployScript --rpc-url celo-sepolia --broadcast --verify
 ```
 
-This command:
-- Deploys all four contracts (Token, Swap, Gem, Rewards)
-- Sets up contract relationships
-- Activates claim conditions
-- Verifies contracts on Blockscout
+This deploys all four contracts. Sets up relationships. Activates claim conditions. Verifies on Blockscout.
 
-### Deploy Only Token and Swap Contracts
+### Deploy Token and Swap Only
 
-If you only need to deploy the token and swap contracts:
+Deploy latest contracts with cUSD support:
 
 ```bash
 forge script script/DeployTokenAndSwap.s.sol:DeployTokenAndSwapScript --rpc-url celo-sepolia --broadcast --verify
 ```
 
-Then update existing Gem contract to use new token:
+This deploys new token and swap contracts. Includes cUSD payment support.
+
+### Update Existing Contracts
+
+After deploying new token and swap, update Gem contract:
 
 ```bash
 forge script script/UpdateContracts.s.sol:UpdateContractsScript --rpc-url celo-sepolia --broadcast
 ```
 
-### Deploy to Celo Mainnet
+This updates Gem contract payment token. Sets token rewards contract address.
+
+### Deploy to Mainnet
 
 ```bash
 forge script script/Deploy.s.sol:DeployScript --rpc-url celo --broadcast --verify
@@ -106,88 +106,74 @@ forge script script/Deploy.s.sol:DeployScript --rpc-url celo --broadcast --verif
 
 ## Deployed Contracts
 
-### Celo Sepolia Testnet
+Celo Sepolia Testnet:
 
-- **RhythmRushToken**: `0x9f70e9CDe0576E549Fb8BB9135eB74c304b0868A` (New token with swap functionality)
-- **RhythmRushSwap**: `0x22E1952B7C44e57C917f19Df8c0d186A4f80E2B4` (Buy RUSH with CELO - 1 CELO = 30 RUSH)
-- **RhythmRushGem**: `0xBdE05919CE1ee2E20502327fF74101A8047c37be`
-- **RhythmRushRewards**: `0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280`
+RhythmRushToken: 0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
 
-View on [Blockscout](https://celo-sepolia.blockscout.com/)
+RhythmRushSwap: 0x2744e8aAce17a217858FF8394C9d1198279215d9
+
+RhythmRushGem: 0xBdE05919CE1ee2E20502327fF74101A8047c37be
+
+RhythmRushRewards: 0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
+
+cUSD Token: 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1
+
+View contracts on Blockscout: https://celo-sepolia.blockscout.com/
 
 ## Usage
 
-### Buying RUSH Tokens with CELO
+### Buy RUSH Tokens with CELO
 
-Users can buy RUSH tokens directly with CELO using the swap contract:
+Send CELO to swap contract. Receive RUSH tokens.
 
-```solidity
-// Send CELO to swap contract
-swapContract.buyRushTokens{value: celoAmount}();
+Exchange rate: 1 CELO equals 30 RUSH tokens.
 
-// Exchange rate: 1 CELO = 30 RUSH tokens
-// Minimum purchase: 0.01 CELO
-```
+Minimum purchase: 0.01 CELO.
 
-The swap contract:
-- Accepts CELO (native currency)
-- Mints RUSH tokens directly to buyer
-- Transfers CELO to treasury
-- Exchange rate adjustable by owner
+### Buy RUSH Tokens with cUSD
 
-### Minting NFT Gems
+Approve cUSD spending first. Call buyRushTokensWithCUSD function.
 
-Players mint Gems by paying 34 RUSH tokens:
+Exchange rate: 0.17 cUSD equals 30 RUSH tokens.
 
-```solidity
-// 1. Approve tokens first
-rushToken.approve(gemContractAddress, 34 * 10**18);
+Minimum purchase: 0.01 cUSD.
 
-// 2. Mint Gem
-gemContract.claim(
-    playerAddress,
-    1, // quantity
-    rushTokenAddress,
-    34 * 10**18, // price per gem
-    allowlistProof, // empty struct
-    "0x" // data
-);
-```
+### Mint NFT Gems
 
-### Submitting Scores
+Approve 34 RUSH tokens. Call claim function on Gem contract.
 
-Players submit scores after gameplay:
+One Gem unlocks all games.
 
-```solidity
-rewardsContract.submitScore(score);
-```
+### Submit Scores
 
-Minimum score threshold: 10 points.
+Call submitScore function on rewards contract.
 
-### Claiming Rewards
+Minimum score: 10 points.
 
-Top players claim RUSH token rewards:
+### Claim Rewards
 
-```solidity
-rewardsContract.claimRewards();
-```
+Top players call claimRewards function.
 
-**Reward Distribution:**
-- 1st place: 40% of prize pool
-- 2nd place: 25% of prize pool
-- 3rd place: 15% of prize pool
-- Places 4-10: 10% split among 7 players
-- Participation: 10% split among all eligible players
+Reward distribution:
+- First place: 40 percent of prize pool
+- Second place: 25 percent of prize pool
+- Third place: 15 percent of prize pool
+- Places four through ten: 10 percent split among seven players
+- Participation: 10 percent split among all eligible players
 
-### Funding Prize Pool
+### Fund Prize Pool
 
-Owner funds the prize pool:
+Owner calls fundPrizePool function.
 
-```solidity
-rewardsContract.fundPrizePool(amount);
-```
+Mints RUSH tokens directly to contract.
 
-This mints RUSH tokens directly to the contract.
+## Exchange Rates
+
+CELO to RUSH: 1 CELO equals 30 RUSH tokens.
+
+cUSD to RUSH: 0.17 cUSD equals 30 RUSH tokens.
+
+Gem price: 34 RUSH tokens per Gem.
 
 ## Testing
 
@@ -240,12 +226,12 @@ const gemContract = getContract({
 });
 ```
 
-### Example: Buy RUSH Tokens with CELO
+### Buy RUSH Tokens with CELO
 
 ```typescript
 import { ethers } from "ethers";
 
-const swapAddress = "0x22E1952B7C44e57C917f19Df8c0d186A4f80E2B4";
+const swapAddress = "0x2744e8aAce17a217858FF8394C9d1198279215d9";
 const swapABI = [
   {
     inputs: [],
@@ -260,7 +246,6 @@ const provider = new ethers.providers.Web3Provider(window.ethereum);
 const signer = provider.getSigner();
 const swapContract = new ethers.Contract(swapAddress, swapABI, signer);
 
-// Buy 34 RUSH tokens (costs ~1.1333 CELO)
 const celoAmount = ethers.utils.parseEther("1.1333");
 const tx = await swapContract.buyRushTokens({
   value: celoAmount,
@@ -269,15 +254,49 @@ const tx = await swapContract.buyRushTokens({
 await tx.wait();
 ```
 
-### Example: Mint a Gem
+### Buy RUSH Tokens with cUSD
 
 ```typescript
-// Approve tokens
+const cusdAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1";
+const cusdABI = [
+  {
+    constant: false,
+    inputs: [
+      { name: "_spender", type: "address" },
+      { name: "_value", type: "uint256" }
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    type: "function"
+  }
+];
+
+const swapABI = [
+  {
+    inputs: [{ name: "cusdAmount", type: "uint256" }],
+    name: "buyRushTokensWithCUSD",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  }
+];
+
+const cusdContract = new ethers.Contract(cusdAddress, cusdABI, signer);
+await cusdContract.approve(swapAddress, ethers.constants.MaxUint256);
+
+const cusdAmount = ethers.utils.parseEther("0.17");
+const swapContract = new ethers.Contract(swapAddress, swapABI, signer);
+const tx = await swapContract.buyRushTokensWithCUSD(cusdAmount);
+await tx.wait();
+```
+
+### Mint a Gem
+
+```typescript
 await rushToken.write("approve", {
   args: [gemContractAddress, BigInt(34 * 10**18)]
 });
 
-// Mint Gem
 await gemContract.write("claim", {
   args: [
     userAddress,
@@ -292,25 +311,25 @@ await gemContract.write("claim", {
 
 ## Network Configuration
 
-### Celo Sepolia Testnet
-- Chain ID: `11142220`
-- RPC: `https://forno.celo-sepolia.celo-testnet.org/`
-- Explorer: `https://celo-sepolia.blockscout.com/`
+Celo Sepolia Testnet:
+- Chain ID: 11142220
+- RPC: https://forno.celo-sepolia.celo-testnet.org/
+- Explorer: https://celo-sepolia.blockscout.com/
+- cUSD: 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1
 
-### Celo Mainnet
-- Chain ID: `42220`
-- RPC: `https://forno.celo.org`
-- Explorer: `https://celoscan.io/`
+Celo Mainnet:
+- Chain ID: 42220
+- RPC: https://forno.celo.org
+- Explorer: https://celoscan.io/
+- cUSD: 0x765DE816845861e75A25fCA122bb6898B8B1282a
 
 ## Contract Verification
 
-Contracts are automatically verified using your Etherscan API key during deployment. Verification works on:
-- Celo Mainnet (Celoscan)
-- Celo Sepolia (Blockscout)
+Contracts verify automatically during deployment using Etherscan API key.
 
-Both accept standard Etherscan API keys.
+Verification works on Celo Mainnet and Celo Sepolia.
 
-To manually verify a contract:
+Manual verification:
 
 ```bash
 forge verify-contract <CONTRACT_ADDRESS> <CONTRACT_PATH>:<CONTRACT_NAME> \
@@ -326,18 +345,18 @@ forge verify-contract <CONTRACT_ADDRESS> <CONTRACT_PATH>:<CONTRACT_NAME> \
 ```
 contracts/
 ├── src/
-│   ├── RhythmRushToken.sol    # ERC20 token contract
-│   ├── RhythmRushSwap.sol     # Swap contract (CELO to RUSH)
-│   ├── RhythmRushGem.sol      # ERC721 NFT contract
-│   └── RhythmRushRewards.sol  # Rewards distribution
+│   ├── RhythmRushToken.sol
+│   ├── RhythmRushSwap.sol
+│   ├── RhythmRushGem.sol
+│   └── RhythmRushRewards.sol
 ├── test/
-│   └── RhythmRush.t.sol       # Test suite
+│   └── RhythmRush.t.sol
 ├── script/
-│   ├── Deploy.s.sol           # Full deployment script
-│   ├── DeployTokenAndSwap.s.sol # Token and Swap only
-│   └── UpdateContracts.s.sol  # Update existing contracts
-├── foundry.toml              # Foundry configuration
-└── README.md                 # This file
+│   ├── Deploy.s.sol
+│   ├── DeployTokenAndSwap.s.sol
+│   └── UpdateContracts.s.sol
+├── foundry.toml
+└── README.md
 ```
 
 ## Security
@@ -351,30 +370,34 @@ Contracts include security features:
 
 ## Troubleshooting
 
-### Deployment Fails
+Deployment fails:
+- Check `.env` file has correct values
+- Ensure you have enough CELO for gas fees
+- Verify network connectivity
+- Check contract compilation: `forge build`
 
-1. Check `.env` file has correct values
-2. Ensure you have enough CELO for gas fees
-3. Verify network connectivity
-4. Check contract compilation: `forge build`
+Verification fails:
+- Ensure `ETHERSCAN_API_KEY` is set in `.env`
+- Check API key is valid
+- Wait a few minutes after deployment before verification
+- Try manual verification on Blockscout
 
-### Verification Fails
+Tests fail:
+- Run `forge clean` and rebuild
+- Check Solidity version matches (0.8.24)
+- Verify dependencies installed: `forge install`
 
-1. Ensure `ETHERSCAN_API_KEY` is set in `.env`
-2. Check API key is valid
-3. Wait a few minutes after deployment before verification
-4. Try manual verification on Blockscout/Celoscan
+## Contract Update Notes
 
-### Tests Fail
-
-1. Run `forge clean` and rebuild
-2. Check Solidity version matches (0.8.24)
-3. Verify dependencies installed: `forge install`
-
+After deploying new contracts:
+- Update Gem contract payment token address
+- Update frontend with new contract addresses
+- Verify all contracts on Blockscout
+- Test full flow: buy RUSH, mint Gem, play, submit score
 
 ## Support
 
 For issues or questions:
-- [Celo Documentation](https://docs.celo.org)
-- [Foundry Book](https://book.getfoundry.sh)
-- [OpenZeppelin Contracts](https://docs.openzeppelin.com/contracts)
+- Celo Documentation: https://docs.celo.org
+- Foundry Book: https://book.getfoundry.sh
+- OpenZeppelin Contracts: https://docs.openzeppelin.com/contracts
