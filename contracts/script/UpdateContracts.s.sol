@@ -11,7 +11,7 @@ contract UpdateContractsScript is Script {
     address constant REWARDS_CONTRACT = 0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280;
     
     // New deployed addresses
-    address constant NEW_TOKEN = 0x9f70e9CDe0576E549Fb8BB9135eB74c304b0868A;
+    address constant NEW_TOKEN = 0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0;
     
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
