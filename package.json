@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@celo/abis": "^14.0.1",
-    "@celo/identity": "^5.1.2",
-    "viem": "^2.39.3"
-  }
-}
