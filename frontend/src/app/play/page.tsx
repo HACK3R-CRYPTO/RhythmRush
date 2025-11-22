@@ -57,8 +57,20 @@ export default function PlayPage() {
       address: account?.address 
     });
 
-    // Check wallet connection first
+    // Hide ConnectButton's connected state UI when wallet is connected
     if (wallet && account?.address) {
+      // Hide any ConnectButton dropdowns or connected state UI
+      setTimeout(() => {
+        const connectButtons = document.querySelectorAll('[data-testid="connect-button"]');
+        connectButtons.forEach((btn: Element) => {
+          const element = btn as HTMLElement;
+          const parent = element.closest('[class*="tw-connect"]');
+          if (parent && parent !== element) {
+            (parent as HTMLElement).style.display = 'none';
+          }
+        });
+      }, 100);
+      
       console.log("Wallet connected, checking Gem balance...");
       checkGemBalance();
     } else {
@@ -228,33 +240,43 @@ export default function PlayPage() {
               <p className="text-yellow-300 font-semibold text-center mb-4">
                 🔌 Connect Your Wallet
               </p>
-              <ConnectButton
-                chain={chain}
-                client={client}
-                onConnect={() => {
-                  // Wallet connected, wait a bit then check balance
-                  setTimeout(() => {
-                    if (account?.address) {
-                      checkGemBalance();
+              <div className="wallet-connect-wrapper">
+                <ConnectButton
+                  client={client}
+                  chain={chain}
+                  connectButton={{
+                    style: {
+                      width: '100%',
+                      backgroundColor: '#FFD700',
+                      color: '#000',
+                      fontWeight: 'bold',
+                      borderRadius: '12px',
+                      padding: '12px 24px',
                     }
-                  }, 1500);
-                }}
-                connectButton={{
-                  style: {
-                    width: '100%',
-                    backgroundColor: '#FFD700',
-                    color: '#000',
-                    fontWeight: 'bold',
-                    borderRadius: '12px',
-                    padding: '12px 24px',
-                  }
-                }}
-              />
+                  }}
+                  connectModal={{
+                    size: "compact",
+                    welcomeScreen: {
+                      title: "Welcome to RhythmRush",
+                      subtitle: "Connect your wallet to start playing",
+                    },
+                  }}
+                  onConnect={() => {
+                    // Wallet connected, wait a bit then check balance
+                    setTimeout(() => {
+                      if (account?.address) {
+                        checkGemBalance();
+                      }
+                    }, 1500);
+                  }}
+                />
+              </div>
               <p className="text-white/60 text-xs text-center mt-3">
                 Connect to Celo Sepolia to play
               </p>
             </motion.div>
           )}
+          
 
           {wallet && account && (
             <>

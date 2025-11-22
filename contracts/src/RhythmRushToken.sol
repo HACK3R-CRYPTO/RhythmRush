@@ -21,11 +21,15 @@ contract RhythmRushToken is ERC20, ERC20Burnable, ERC20Pausable, Ownable, Reentr
     // Rewards contract address (can mint tokens)
     address public rewardsContract;
     
+    // Swap contract address (can mint tokens)
+    address public swapContract;
+    
     // Treasury address
     address public treasury;
     
     // Events
     event RewardsContractUpdated(address indexed oldContract, address indexed newContract);
+    event SwapContractUpdated(address indexed oldContract, address indexed newContract);
     event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
     event TokensMinted(address indexed to, uint256 amount);
     
@@ -45,14 +49,14 @@ contract RhythmRushToken is ERC20, ERC20Burnable, ERC20Pausable, Ownable, Reentr
     }
     
     /**
-     * @dev Mint tokens (only by rewards contract or owner)
+     * @dev Mint tokens (only by rewards contract, swap contract, or owner)
      * @param to Address to receive tokens
      * @param amount Amount to mint
      */
     function mint(address to, uint256 amount) external {
         require(
-            msg.sender == rewardsContract || msg.sender == owner(),
-            "Only rewards contract or owner can mint"
+            msg.sender == rewardsContract || msg.sender == swapContract || msg.sender == owner(),
+            "Only rewards contract, swap contract, or owner can mint"
         );
         require(totalSupply() + amount <= MAX_SUPPLY, "Exceeds max supply");
         _mint(to, amount);
@@ -68,6 +72,17 @@ contract RhythmRushToken is ERC20, ERC20Burnable, ERC20Pausable, Ownable, Reentr
         address oldContract = rewardsContract;
         rewardsContract = _rewardsContract;
         emit RewardsContractUpdated(oldContract, _rewardsContract);
+    }
+    
+    /**
+     * @dev Set swap contract address (only owner)
+     * @param _swapContract New swap contract address
+     */
+    function setSwapContract(address _swapContract) external onlyOwner {
+        require(_swapContract != address(0), "Swap contract cannot be zero address");
+        address oldContract = swapContract;
+        swapContract = _swapContract;
+        emit SwapContractUpdated(oldContract, _swapContract);
     }
     
     /**

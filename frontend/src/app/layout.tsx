@@ -27,7 +27,7 @@ export default function RootLayout({
       <body suppressHydrationWarning={true}>
         <QueryClientProvider client={queryClient}>
           <ThirdwebProvider>
-        {children}
+            {children}
             <Toaster 
               position="top-center"
               toastOptions={{

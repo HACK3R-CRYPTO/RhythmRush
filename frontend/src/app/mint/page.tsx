@@ -12,6 +12,7 @@ import IPhoneFrame from "@/components/iPhoneFrame";
 import Loading from "@/components/Loading";
 import SuccessBanner from "@/components/SuccessBanner";
 import { MintingLoader } from "@/components/mint/MintingLoader";
+import { isMiniPayAvailable, checkCUSDBalance, openMiniPayAddCash } from "@/utils/minipay";
 
 // Contract addresses on Celo Sepolia
 const RUSH_TOKEN_ADDRESS = "0x9f70e9CDe0576E549Fb8BB9135eB74c304b0868A"; // New token with swap functionality
@@ -136,6 +137,8 @@ export default function MintPage() {
   const [buyRushInProgress, setBuyRushInProgress] = useState(false);
   const [nftTokenId, setNftTokenId] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [isMiniPay, setIsMiniPay] = useState(false);
+  const [cUSDBalance, setCUSDBalance] = useState<string>("0");
   
   const count = 1; // Always mint 1 Gem at a time
 
@@ -161,17 +164,24 @@ export default function MintPage() {
   });
 
   useEffect(() => {
+    setIsMiniPay(isMiniPayAvailable());
+  }, []);
+
+  useEffect(() => {
     if (wallet && account) {
       setIsConnected(true);
       setIsLoading(false);
       checkRushBalance();
       checkCeloBalance();
       checkGemBalance();
+      if (isMiniPay && account.address) {
+        checkCUSDBalance(account.address).then(setCUSDBalance);
+      }
     } else {
       setIsConnected(false);
       setIsLoading(false);
     }
-  }, [wallet, account]);
+  }, [wallet, account, isMiniPay]);
 
   const formatBalance = (balanceWei: ethers.BigNumber): string => {
     // Convert wei to ether string with full precision
@@ -515,6 +525,12 @@ export default function MintPage() {
             <div className="card-blur">
               {/* Balances */}
               <div className="space-y-3 mb-6">
+                {isMiniPay && (
+                  <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                    <span className="text-white font-semibold">cUSD Balance:</span>
+                    <span className="text-green-300 font-bold">{parseFloat(cUSDBalance).toFixed(2)} cUSD</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between">
                   <span className="text-white font-semibold">CELO Balance:</span>
                   <span className="text-white font-bold">{parseFloat(celoBalance).toFixed(4)} CELO</span>

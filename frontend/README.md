@@ -9,6 +9,7 @@ Modern React application built with Next.js 15. Features wallet connection, toke
 ## Features
 
 - **Wallet Connection** - Connect with Thirdweb SDK. Supports multiple wallet providers.
+- **MiniPay Integration** - Automatic MiniPay detection. cUSD balance display. Seamless low-cost transactions.
 - **Buy RUSH Tokens** - Purchase RUSH tokens directly with CELO. No DEX needed.
 - **Mint NFT Gems** - Mint Gem NFTs to unlock game access.
 - **RhythmRush Game** - Tap buttons in sync with rhythm. Score points. Submit automatically.
@@ -69,17 +70,19 @@ frontend/
 ├── src/
 │   ├── app/                    # Next.js app directory
 │   │   ├── page.tsx           # Home/splash screen
-│   │   ├── wallet-connect/    # Wallet connection page
-│   │   ├── mint/              # Mint Gem page with RUSH purchase
+│   │   ├── wallet-connect/    # Wallet connection page (MiniPay detection)
+│   │   ├── mint/              # Mint Gem page with RUSH purchase (cUSD balance)
 │   │   ├── play/              # Game selection page
 │   │   ├── game/              # RhythmRush game
 │   │   ├── simon-game/        # Simon game
 │   │   ├── submit-score/      # Score submission page
 │   │   └── leaderboard/       # Leaderboard page
 │   ├── components/            # Reusable React components
-│   │   ├── iPhoneFrame.tsx    # iPhone frame wrapper
+│   │   ├── iPhoneFrame.tsx    # iPhone frame wrapper (mobile-responsive)
 │   │   ├── Loading.tsx        # Loading spinner
 │   │   └── SuccessBanner.tsx  # Success notification
+│   ├── utils/                 # Utility functions
+│   │   └── minipay.ts         # MiniPay integration utilities
 │   ├── config/                # Configuration files
 │   │   └── game.ts            # Game configuration
 │   ├── styles/                # Global styles
@@ -101,6 +104,21 @@ Update these in the respective page files if contracts are redeployed:
 - **Rewards Contract**: `0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280`
 
 ## Key Features Explained
+
+### MiniPay Integration
+
+RhythmRush automatically detects MiniPay wallet and provides enhanced features:
+
+- **Automatic Detection** - Detects when users access via Opera Mini or MiniPay app
+- **Visual Indicators** - Shows green "MiniPay Detected!" badge on wallet connect page
+- **cUSD Balance** - Displays Celo Dollar balance for MiniPay users
+- **Add Cash Button** - Quick access to MiniPay's add cash screen via deeplink
+- **Low-Cost Transactions** - MiniPay users benefit from sub-cent fees
+
+**Implementation:**
+- Detection via `window.ethereum.isMiniPay`
+- cUSD balance checking using `@celo/abis` and `viem`
+- Deeplink to `https://minipay.opera.com/add_cash`
 
 ### Buy RUSH Tokens
 
@@ -152,6 +170,7 @@ Users can purchase RUSH tokens directly with CELO:
 - **Animations**: Framer Motion
 - **Wallet**: Thirdweb SDK
 - **Blockchain**: Ethers.js
+- **MiniPay**: @celo/abis, @celo/identity, viem@2
 - **Notifications**: React Hot Toast
 - **Audio**: Web Audio API
 
