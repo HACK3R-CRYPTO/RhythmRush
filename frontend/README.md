@@ -1,45 +1,30 @@
 # RhythmRush Frontend
 
-Next.js frontend application for RhythmRush play-to-earn game. Mobile-first design with iPhone frame UI. Buy RUSH tokens. Mint Gems. Play games. Earn rewards.
+Next.js frontend for RhythmRush game. Connect wallet. Buy tokens. Mint Gems. Play games. Earn rewards.
 
-## Overview
+## What This Frontend Does
 
-Modern React application built with Next.js 15. Features wallet connection, token swapping, NFT minting, and interactive games. Designed for mobile devices with responsive iPhone frame interface.
-
-## Features
-
-- **Wallet Connection** - Connect with Thirdweb SDK. Supports multiple wallet providers.
-- **MiniPay Integration** - Automatic MiniPay detection. cUSD balance display. Seamless low-cost transactions.
-- **Buy RUSH Tokens** - Purchase RUSH tokens directly with CELO. No DEX needed.
-- **Mint NFT Gems** - Mint Gem NFTs to unlock game access.
-- **RhythmRush Game** - Tap buttons in sync with rhythm. Score points. Submit automatically.
-- **Simon Game** - Memory pattern game. Repeat sequences. Score based on speed.
-- **Leaderboard** - View top players. Podium display for top 3. List for positions 4-10.
-- **Sound Effects** - Audio feedback for game interactions. Fallback tones if files missing.
-- **Keyboard Controls** - Play on laptop using 1-4 keys, arrow keys, or WASD.
+You connect your wallet. You buy RUSH tokens. You mint Gem NFTs. You play games. You submit scores. You view leaderboard. You claim rewards.
 
 ## Prerequisites
 
-- Node.js 18+ installed
-- npm or yarn package manager
-- Wallet extension (MetaMask, WalletConnect, etc.)
-- CELO Sepolia testnet configured in wallet
+Install Node.js 18 or higher. Install npm or yarn. Have a wallet extension ready. Configure Celo Sepolia testnet in your wallet.
 
 ## Installation
 
-1. Navigate to frontend directory:
+Navigate to frontend directory:
 
 ```bash
 cd RhythmRush/frontend
 ```
 
-2. Install dependencies:
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Create `.env.local` file (optional, for custom configuration):
+Create `.env.local` file (optional):
 
 ```env
 NEXT_PUBLIC_CHAIN_ID=11142220
@@ -54,7 +39,7 @@ Start development server:
 npm run dev
 ```
 
-Visit `http://localhost:3000` in your browser.
+Visit http://localhost:3000 in your browser.
 
 ## Build for Production
 
@@ -68,159 +53,286 @@ npm start
 ```
 frontend/
 ├── src/
-│   ├── app/                    # Next.js app directory
-│   │   ├── page.tsx           # Home/splash screen
-│   │   ├── wallet-connect/    # Wallet connection page (MiniPay detection)
-│   │   ├── mint/              # Mint Gem page with RUSH purchase (cUSD balance)
-│   │   ├── play/              # Game selection page
-│   │   ├── game/              # RhythmRush game
-│   │   ├── simon-game/        # Simon game
-│   │   ├── submit-score/      # Score submission page
-│   │   └── leaderboard/       # Leaderboard page
-│   ├── components/            # Reusable React components
-│   │   ├── iPhoneFrame.tsx    # iPhone frame wrapper (mobile-responsive)
-│   │   ├── Loading.tsx        # Loading spinner
-│   │   └── SuccessBanner.tsx  # Success notification
-│   ├── utils/                 # Utility functions
-│   │   └── minipay.ts         # MiniPay integration utilities
-│   ├── config/                # Configuration files
-│   │   └── game.ts            # Game configuration
-│   ├── styles/                # Global styles
-│   └── client.ts              # Thirdweb client setup
-├── public/                     # Static assets
-│   └── sounds/                # Game sound effects
-├── package.json               # Dependencies
-├── next.config.ts             # Next.js configuration
-└── README.md                  # This file
+│   ├── app/
+│   │   ├── page.tsx
+│   │   ├── wallet-connect/
+│   │   ├── mint/
+│   │   ├── play/
+│   │   ├── game/
+│   │   ├── simon-game/
+│   │   ├── submit-score/
+│   │   └── leaderboard/
+│   ├── components/
+│   │   ├── iPhoneFrame.tsx
+│   │   ├── Loading.tsx
+│   │   └── SuccessBanner.tsx
+│   ├── utils/
+│   │   └── minipay.ts
+│   ├── config/
+│   │   └── game.ts
+│   ├── styles/
+│   └── client.ts
+├── public/
+│   └── sounds/
+├── package.json
+├── next.config.ts
+└── README.md
 ```
 
 ## Contract Addresses
 
-Update these in the respective page files if contracts are redeployed:
+Current deployed contracts on Celo Sepolia:
 
-- **RUSH Token**: `0x9f70e9CDe0576E549Fb8BB9135eB74c304b0868A`
-- **Swap Contract**: `0x22E1952B7C44e57C917f19Df8c0d186A4f80E2B4`
-- **Gem Contract**: `0xBdE05919CE1ee2E20502327fF74101A8047c37be`
-- **Rewards Contract**: `0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280`
+RUSH Token: 0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
 
-## Key Features Explained
+Swap Contract: 0x2744e8aAce17a217858FF8394C9d1198279215d9
 
-### MiniPay Integration
+Gem Contract: 0xBdE05919CE1ee2E20502327fF74101A8047c37be
 
-RhythmRush automatically detects MiniPay wallet and provides enhanced features:
+Rewards Contract: 0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
 
-- **Automatic Detection** - Detects when users access via Opera Mini or MiniPay app
-- **Visual Indicators** - Shows green "MiniPay Detected!" badge on wallet connect page
-- **cUSD Balance** - Displays Celo Dollar balance for MiniPay users
-- **Add Cash Button** - Quick access to MiniPay's add cash screen via deeplink
-- **Low-Cost Transactions** - MiniPay users benefit from sub-cent fees
+cUSD Token: 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1
 
-**Implementation:**
-- Detection via `window.ethereum.isMiniPay`
-- cUSD balance checking using `@celo/abis` and `viem`
-- Deeplink to `https://minipay.opera.com/add_cash`
+Update these in `src/app/mint/page.tsx` if contracts are redeployed.
+
+## MiniPay Integration
+
+RhythmRush detects MiniPay automatically. Shows cUSD balance. Enables cUSD payments. Provides low-cost transactions.
+
+### Features
+
+Automatic detection via `window.ethereum.isMiniPay`.
+
+cUSD balance display for MiniPay users.
+
+cUSD payments to buy RUSH tokens (MiniPay users only).
+
+Exchange rate: 0.17 cUSD equals 30 RUSH tokens.
+
+Add cash button links to MiniPay add cash screen.
+
+Low transaction fees via MiniPay.
+
+### Implementation
+
+Detection (`src/utils/minipay.ts`):
+```typescript
+export function isMiniPayAvailable(): boolean {
+  return !!(window as any).ethereum?.isMiniPay;
+}
+```
+
+cUSD balance check (`src/utils/minipay.ts`):
+```typescript
+export async function checkCUSDBalance(
+  address: string,
+  isTestnet: boolean = true
+): Promise<string> {
+  // Uses @celo/abis and viem to query cUSD balance
+  // Returns balance as string in ether units
+}
+```
+
+Payment method selector (`src/app/mint/page.tsx`):
+- Shown only for MiniPay users
+- Allows choosing between CELO and cUSD
+- Defaults to cUSD for MiniPay users
+- Shows helpful tip for non-MiniPay users
+
+Smart contract integration:
+- Uses `buyRushTokensWithCUSD()` function in swap contract
+- Requires ERC20 approval before purchase
+- Handles cUSD token transfers securely
+
+### Testing MiniPay
+
+Install MiniPay app on mobile device.
+
+Expose local server using ngrok:
+
+```bash
+ngrok http 3000
+```
+
+Access ngrok URL in MiniPay browser.
+
+Connect wallet. MiniPay auto-detects.
+
+Add cUSD using Add Cash to MiniPay button.
+
+Test payment. Select cUSD payment method. Buy RUSH tokens.
+
+## Key Features
 
 ### Buy RUSH Tokens
 
-Users can purchase RUSH tokens directly with CELO:
+Purchase RUSH tokens directly:
+- CELO payment available for all wallets (1 CELO equals 30 RUSH)
+- cUSD payment available only for MiniPay users (0.17 cUSD equals 30 RUSH)
 - Select amount of RUSH tokens to buy
-- See CELO cost calculated automatically
-- Exchange rate: 1 CELO = 30 RUSH tokens
+- See cost calculated automatically
 - Quick buttons for common amounts (34, 50, 100, 200 RUSH)
 - Balance updates automatically after purchase
 
 ### Mint Gem
 
-- Requires exactly 34 RUSH tokens
-- One Gem unlocks all games
-- Automatic approval flow
-- Balance checks prevent insufficient funds
+Requires exactly 34 RUSH tokens.
+
+One Gem unlocks all games.
+
+Automatic approval flow.
+
+Balance checks prevent insufficient funds.
 
 ### Games
 
-**RhythmRush:**
-- 30-second rounds
+RhythmRush:
+- Thirty second rounds
 - Tap glowing buttons in sync
-- Perfect timing: 10 points
-- Good timing: 5 points
-- Keyboard controls supported
+- Perfect timing scores 10 points
+- Good timing scores 5 points
+- Keyboard controls supported (1-4, arrows, WASD)
 - Sound effects for feedback
+- Automatic score submission
 
-**Simon Game:**
+Simon Game:
 - Watch button sequence
 - Repeat pattern correctly
 - Score based on speed
 - Game over on wrong answer
 - Automatic score submission
+- Prevents new game until score submitted
 
 ### Leaderboard
 
-- Podium display for top 3 players
-- List view for positions 4-10
-- Deduplicated by player address
-- Shows best score per player
-- Highlights your position
+Podium display for top three players.
+
+List view for positions four through ten.
+
+Deduplicated by player address.
+
+Shows best score per player.
+
+Highlights your position.
 
 ## Technology Stack
 
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **UI Library**: React 19
-- **Styling**: Tailwind CSS
-- **Animations**: Framer Motion
-- **Wallet**: Thirdweb SDK
-- **Blockchain**: Ethers.js
-- **MiniPay**: @celo/abis, @celo/identity, viem@2
-- **Notifications**: React Hot Toast
-- **Audio**: Web Audio API
+Framework: Next.js 15 (App Router)
+
+Language: TypeScript
+
+UI Library: React 18
+
+Styling: Tailwind CSS
+
+Animations: Framer Motion
+
+Wallet: Thirdweb SDK
+
+Blockchain: Ethers.js
+
+MiniPay: @celo/abis, viem
+
+Notifications: React Hot Toast
+
+Audio: Web Audio API
 
 ## Environment Variables
 
 Create `.env.local` for custom configuration:
 
 ```env
-# Optional: Custom RPC URL
 NEXT_PUBLIC_RPC_URL=https://forno.celo-sepolia.celo-testnet.org/
-
-# Optional: Custom Chain ID
 NEXT_PUBLIC_CHAIN_ID=11142220
 ```
 
+## Mobile Responsiveness
+
+App uses iPhone frame on desktop. Removes frame on mobile devices for full-screen experience.
+
+Mobile detection uses:
+- Screen width (less than 768px)
+- Touch device capabilities
+- User agent detection
+
 ## Troubleshooting
 
-### Wallet Not Connecting
+Wallet not connecting:
+- Ensure wallet extension is installed
+- Check wallet is connected to Celo Sepolia network
+- Refresh page and try again
+- Check browser console for errors
 
-1. Ensure wallet extension is installed
-2. Check wallet is connected to Celo Sepolia network
-3. Refresh page and try again
-4. Check browser console for errors
+MiniPay not detected:
+- Ensure you are using MiniPay app or Opera Mini browser
+- Check `window.ethereum.isMiniPay` in console
+- Verify you are accessing via mobile device
+- Try refreshing the page
 
-### Balance Not Updating
+Balance not updating:
+- Click refresh button next to balance
+- Check console for errors
+- Verify contract addresses are correct
+- Ensure you are on correct network
 
-1. Click refresh button next to balance
-2. Check console for errors
-3. Verify contract addresses are correct
-4. Ensure you're on correct network
+Games not loading:
+- Check browser console for errors
+- Ensure sounds folder exists in public directory
+- Verify game components are imported correctly
+- Check network requests in DevTools
 
-### Games Not Loading
+Transaction fails:
+- Check you have sufficient CELO for gas
+- Verify contract addresses are correct
+- Check browser console for error details
+- Ensure you are on Celo Sepolia network
+- For cUSD payments, ensure you have approved spending
 
-1. Check browser console for errors
-2. Ensure sounds folder exists in public directory
-3. Verify game components are imported correctly
-4. Check network requests in DevTools
-
-### Transaction Fails
-
-1. Check you have sufficient CELO for gas
-2. Verify contract addresses are correct
-3. Check browser console for error details
-4. Ensure you're on Celo Sepolia network
+cUSD payment not available:
+- Verify MiniPay is detected (`isMiniPayAvailable()` returns true)
+- Check you have sufficient cUSD balance
+- Ensure you have approved cUSD spending
+- Verify swap contract address is correct
 
 ## Browser Support
 
-- Chrome/Edge (recommended)
-- Firefox
-- Safari
-- Mobile browsers (iOS Safari, Chrome Mobile)
+Chrome or Edge (recommended)
 
+Firefox
 
+Safari
+
+Mobile browsers (iOS Safari, Chrome Mobile)
+
+MiniPay browser (Opera Mini)
+
+## Contract Update Notes
+
+When contracts are redeployed:
+
+Update contract addresses in `src/app/mint/page.tsx`:
+- `RUSH_TOKEN_ADDRESS`
+- `SWAP_CONTRACT_ADDRESS`
+- `GEM_CONTRACT_ADDRESS`
+
+Update contract addresses in `src/app/play/page.tsx`:
+- `GEM_CONTRACT_ADDRESS`
+
+Verify all contract interactions work:
+- Buy RUSH tokens
+- Mint Gem
+- Submit scores
+- View leaderboard
+
+Test MiniPay integration:
+- Detection works
+- cUSD balance displays
+- cUSD payment flow works
+
+## Support
+
+For issues or questions:
+- Celo Documentation: https://docs.celo.org
+- MiniPay Documentation: https://minipay.opera.com
+- Thirdweb Documentation: https://portal.thirdweb.com
+- Next.js Documentation: https://nextjs.org/docs

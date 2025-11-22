@@ -15,11 +15,13 @@ import { MintingLoader } from "@/components/mint/MintingLoader";
 import { isMiniPayAvailable, checkCUSDBalance, openMiniPayAddCash } from "@/utils/minipay";
 
 // Contract addresses on Celo Sepolia
-const RUSH_TOKEN_ADDRESS = "0x9f70e9CDe0576E549Fb8BB9135eB74c304b0868A"; // New token with swap functionality
+const RUSH_TOKEN_ADDRESS = "0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0"; // New token with swap functionality and cUSD support
 const GEM_CONTRACT_ADDRESS = "0xBdE05919CE1ee2E20502327fF74101A8047c37be";
-const SWAP_CONTRACT_ADDRESS = "0x22E1952B7C44e57C917f19Df8c0d186A4f80E2B4"; // Deployed on Celo Sepolia
+const SWAP_CONTRACT_ADDRESS = "0x2744e8aAce17a217858FF8394C9d1198279215d9"; // Deployed on Celo Sepolia with cUSD support
 const PRICE_PER_GEM = BigInt("34000000000000000000"); // 34 RUSH tokens
 const EXCHANGE_RATE = 30; // 1 CELO = 30 RUSH tokens
+const CUSD_EXCHANGE_RATE = 0.17 / 30; // 0.17 cUSD = 30 RUSH, so 1 RUSH = 0.17/30 cUSD
+const CUSD_TOKEN_ADDRESS = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"; // Celo Sepolia cUSD
 
 // ERC20 ABI for RUSH token
 const ERC20_ABI = [
@@ -110,8 +112,22 @@ const SWAP_ABI = [
     type: "function"
   },
   {
+    inputs: [{ name: "cusdAmount", type: "uint256" }],
+    name: "buyRushTokensWithCUSD",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function"
+  },
+  {
     inputs: [{ name: "celoAmount", type: "uint256" }],
     name: "calculateRushAmount",
+    outputs: [{ name: "rushAmount", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [{ name: "cusdAmount", type: "uint256" }],
+    name: "calculateRushAmountFromCUSD",
     outputs: [{ name: "rushAmount", type: "uint256" }],
     stateMutability: "view",
     type: "function"
@@ -121,6 +137,44 @@ const SWAP_ABI = [
     name: "getExchangeRate",
     outputs: [{ name: "rate", type: "uint256" }],
     stateMutability: "view",
+    type: "function"
+  },
+  {
+    inputs: [],
+    name: "getCUSDExchangeRate",
+    outputs: [{ name: "rate", type: "uint256" }],
+    stateMutability: "view",
+    type: "function"
+  }
+];
+
+// cUSD ERC20 ABI
+const CUSD_ABI = [
+  {
+    constant: true,
+    inputs: [{ name: "_owner", type: "address" }],
+    name: "balanceOf",
+    outputs: [{ name: "", type: "uint256" }],
+    type: "function"
+  },
+  {
+    constant: false,
+    inputs: [
+      { name: "_spender", type: "address" },
+      { name: "_value", type: "uint256" }
+    ],
+    name: "approve",
+    outputs: [{ name: "", type: "bool" }],
+    type: "function"
+  },
+  {
+    constant: true,
+    inputs: [
+      { name: "_owner", type: "address" },
+      { name: "_spender", type: "address" }
+    ],
+    name: "allowance",
+    outputs: [{ name: "", type: "uint256" }],
     type: "function"
   }
 ];
@@ -139,6 +193,7 @@ export default function MintPage() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [isMiniPay, setIsMiniPay] = useState(false);
   const [cUSDBalance, setCUSDBalance] = useState<string>("0");
+  const [paymentMethod, setPaymentMethod] = useState<"CELO" | "cUSD">("CELO");
   
   const count = 1; // Always mint 1 Gem at a time
 
@@ -174,6 +229,7 @@ export default function MintPage() {
       checkRushBalance();
       checkCeloBalance();
       checkGemBalance();
+      // Only check cUSD balance for MiniPay users
       if (isMiniPay && account.address) {
         checkCUSDBalance(account.address).then(setCUSDBalance);
       }
@@ -182,6 +238,15 @@ export default function MintPage() {
       setIsLoading(false);
     }
   }, [wallet, account, isMiniPay]);
+
+  // Set default payment method based on MiniPay availability
+  useEffect(() => {
+    if (isMiniPay) {
+      setPaymentMethod("cUSD"); // Default to cUSD for MiniPay users
+    } else {
+      setPaymentMethod("CELO"); // Default to CELO for other wallets
+    }
+  }, [isMiniPay]);
 
   const formatBalance = (balanceWei: ethers.BigNumber): string => {
     // Convert wei to ether string with full precision
@@ -272,47 +337,107 @@ export default function MintPage() {
         return;
       }
 
-      // Calculate required CELO amount
-      const celoAmount = rushAmount / EXCHANGE_RATE;
-      const minCelo = 0.01;
-      
-      if (celoAmount < minCelo) {
-        toast.error(`Minimum purchase is ${calculateCeloCost((minCelo * EXCHANGE_RATE).toString())} RUSH (${minCelo} CELO)`);
-        return;
-      }
-
-      if (parseFloat(celoBalance) < celoAmount) {
-        toast.error(`Insufficient CELO balance. You need ${celoAmount.toFixed(4)} CELO`);
-        return;
-      }
-
       setBuyRushInProgress(true);
       const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       const signer = provider.getSigner();
       const swapContract = new ethers.Contract(SWAP_CONTRACT_ADDRESS, SWAP_ABI, signer);
 
-      const celoAmountWei = ethers.utils.parseEther(celoAmount.toFixed(18));
-      
-      const tx = await swapContract.buyRushTokens({
-        value: celoAmountWei,
-        gasLimit: 200000
-      });
+      if (paymentMethod === "CELO") {
+        // Buy with CELO
+        const celoAmount = rushAmount / EXCHANGE_RATE;
+        const minCelo = 0.01;
+        
+        if (celoAmount < minCelo) {
+          toast.error(`Minimum purchase is ${calculateCeloCost((minCelo * EXCHANGE_RATE).toString())} RUSH (${minCelo} CELO)`);
+          setBuyRushInProgress(false);
+          return;
+        }
 
-      toast.loading(`Buying ${rushAmount} RUSH tokens...`, { id: "buy-rush" });
-      const receipt = await tx.wait();
-      
-      toast.success(`Successfully bought ${rushAmount} RUSH tokens! 🎉`, { id: "buy-rush" });
-      
-      // Refresh balances immediately
-      await Promise.all([
-        checkRushBalance(),
-        checkCeloBalance()
-      ]);
+        if (parseFloat(celoBalance) < celoAmount) {
+          toast.error(`Insufficient CELO balance. You need ${celoAmount.toFixed(4)} CELO`);
+          setBuyRushInProgress(false);
+          return;
+        }
+
+        const celoAmountWei = ethers.utils.parseEther(celoAmount.toFixed(18));
+        
+        const tx = await swapContract.buyRushTokens({
+          value: celoAmountWei,
+          gasLimit: 200000
+        });
+
+        toast.loading(`Buying ${rushAmount} RUSH tokens with CELO...`, { id: "buy-rush" });
+        const receipt = await tx.wait();
+        
+        toast.success(`Successfully bought ${rushAmount} RUSH tokens! 🎉`, { id: "buy-rush" });
+        
+        // Refresh balances
+        await Promise.all([
+          checkRushBalance(),
+          checkCeloBalance()
+        ]);
+      } else {
+        // Buy with cUSD (MiniPay only)
+        if (!isMiniPay) {
+          toast.error("cUSD payments are only available for MiniPay users");
+          setBuyRushInProgress(false);
+          return;
+        }
+
+        // 0.17 cUSD = 30 RUSH, so for rushAmount RUSH: (rushAmount / 30) * 0.17
+        const cusdAmount = (rushAmount / 30) * 0.17;
+        const minCUSD = 0.01;
+        
+        if (cusdAmount < minCUSD) {
+          toast.error(`Minimum purchase is ${(minCUSD * 30 / 0.17).toFixed(2)} RUSH (${minCUSD} cUSD)`);
+          setBuyRushInProgress(false);
+          return;
+        }
+
+        if (parseFloat(cUSDBalance) < cusdAmount) {
+          toast.error(`Insufficient cUSD balance. You need ${cusdAmount.toFixed(4)} cUSD`);
+          setBuyRushInProgress(false);
+          return;
+        }
+
+        // Check and approve cUSD spending
+        const cusdContract = new ethers.Contract(CUSD_TOKEN_ADDRESS, CUSD_ABI, signer);
+        const cusdAmountWei = ethers.utils.parseEther(cusdAmount.toFixed(18));
+        const allowance = await cusdContract.allowance(account.address, SWAP_CONTRACT_ADDRESS);
+        
+        if (allowance.lt(cusdAmountWei)) {
+          toast.loading("Approving cUSD spending...", { id: "approve-cusd" });
+          const approveTx = await cusdContract.approve(SWAP_CONTRACT_ADDRESS, ethers.constants.MaxUint256);
+          await approveTx.wait();
+          toast.success("cUSD approved!", { id: "approve-cusd" });
+        }
+
+        const tx = await swapContract.buyRushTokensWithCUSD(cusdAmountWei, {
+          gasLimit: 200000
+        });
+
+        toast.loading(`Buying ${rushAmount} RUSH tokens with cUSD...`, { id: "buy-rush" });
+        const receipt = await tx.wait();
+        
+        toast.success(`Successfully bought ${rushAmount} RUSH tokens! 🎉`, { id: "buy-rush" });
+        
+        // Refresh balances
+        await Promise.all([
+          checkRushBalance(),
+          checkCUSDBalance(account.address).then(setCUSDBalance)
+        ]);
+      }
       
       // Also refresh after a short delay to ensure balance is updated on-chain
       setTimeout(async () => {
         await checkRushBalance();
-        await checkCeloBalance();
+        if (paymentMethod === "CELO") {
+          await checkCeloBalance();
+        } else {
+          if (account.address) {
+            await checkCUSDBalance(account.address).then(setCUSDBalance);
+          }
+        }
       }, 2000);
       
       setBuyRushAmount("34"); // Reset to Gem price
@@ -328,6 +453,29 @@ export default function MintPage() {
     const amount = parseFloat(rushAmount);
     if (isNaN(amount) || amount <= 0) return "0";
     return (amount / EXCHANGE_RATE).toFixed(4);
+  };
+
+  const calculateCUSDCost = (rushAmount: string): string => {
+    const amount = parseFloat(rushAmount);
+    if (isNaN(amount) || amount <= 0) return "0";
+    // 0.17 cUSD = 30 RUSH, so for amount RUSH: (amount / 30) * 0.17
+    return ((amount / 30) * 0.17).toFixed(4);
+  };
+
+  const calculateCost = (rushAmount: string): string => {
+    if (paymentMethod === "CELO") {
+      return calculateCeloCost(rushAmount);
+    } else {
+      return calculateCUSDCost(rushAmount);
+    }
+  };
+
+  const getCostLabel = (): string => {
+    return paymentMethod === "CELO" ? "CELO" : "cUSD";
+  };
+
+  const checkBalance = (): number => {
+    return paymentMethod === "CELO" ? parseFloat(celoBalance) : parseFloat(cUSDBalance);
   };
 
   const handleMint = async () => {
@@ -573,6 +721,48 @@ export default function MintPage() {
               })() && (
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
                   <div className="space-y-3">
+                    {/* Payment Method Selector - Only show cUSD option for MiniPay users */}
+                    {isMiniPay ? (
+                      <div>
+                        <label className="text-white/80 text-sm mb-2 block">Payment Method</label>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod("CELO")}
+                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${
+                              paymentMethod === "CELO"
+                                ? "bg-rhythmrush-gold text-black"
+                                : "bg-white/10 text-white hover:bg-white/20"
+                            }`}
+                          >
+                            CELO
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setPaymentMethod("cUSD")}
+                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${
+                              paymentMethod === "cUSD"
+                                ? "bg-green-500 text-white"
+                                : "bg-white/10 text-white hover:bg-white/20"
+                            }`}
+                          >
+                            cUSD (MiniPay)
+                          </button>
+                        </div>
+                        {paymentMethod === "cUSD" && (
+                          <p className="text-green-300 text-xs mt-2">
+                            💚 Using MiniPay for seamless, low-cost transactions
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                        <p className="text-blue-300 text-xs text-center">
+                          💡 Tip: Use MiniPay for cUSD payments and lower transaction costs
+                        </p>
+                      </div>
+                    )}
+                    
                     <div>
                       <label className="text-white/80 text-sm mb-1 block">Amount (RUSH)</label>
                       <input
@@ -615,15 +805,21 @@ export default function MintPage() {
                         </button>
                       </div>
                       <p className="text-white/60 text-xs mt-2">
-                        Cost: <span className="text-yellow-400 font-semibold">{calculateCeloCost(buyRushAmount)} CELO</span>
+                        Cost: <span className={`font-semibold ${paymentMethod === "CELO" ? "text-yellow-400" : "text-green-400"}`}>
+                          {calculateCost(buyRushAmount)} {getCostLabel()}
+                        </span>
                       </p>
                     </div>
                     <button
                       onClick={handleBuyRush}
-                      disabled={buyRushInProgress || parseFloat(buyRushAmount) < 1 || parseFloat(celoBalance) < parseFloat(calculateCeloCost(buyRushAmount))}
-                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-500 disabled:cursor-not-allowed text-black font-bold py-3 rounded-xl transition"
+                      disabled={buyRushInProgress || parseFloat(buyRushAmount) < 1 || checkBalance() < parseFloat(calculateCost(buyRushAmount))}
+                      className={`w-full font-bold py-3 px-6 rounded-xl transition ${
+                        paymentMethod === "CELO"
+                          ? "bg-rhythmrush-gold hover:bg-yellow-400 disabled:bg-gray-500 disabled:cursor-not-allowed text-black"
+                          : "bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white"
+                      }`}
                     >
-                      {buyRushInProgress ? "Buying..." : `BUY ${buyRushAmount} RUSH`}
+                      {buyRushInProgress ? "Buying..." : `BUY ${buyRushAmount} RUSH with ${getCostLabel()}`}
                     </button>
                   </div>
                 </div>
