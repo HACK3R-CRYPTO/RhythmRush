@@ -1,7 +1,6 @@
 "use client";
-import { ConnectButton } from "thirdweb/react";
+import { ConnectButton, useActiveWallet } from "thirdweb/react";
 import { useRouter } from 'next/navigation';
-import { useActiveWallet } from "thirdweb/react";
 import { client } from "@/client";
 import { useEffect, useState } from "react";
 import { defineChain } from "thirdweb/chains";
@@ -83,11 +82,8 @@ export default function WalletConnect() {
 
             <div className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white rounded-2xl p-6 border border-white/20 transition-all">
               <ConnectButton
-                chain={chain}
                 client={client}
-                onConnect={() => {
-                  router.replace('/mint');
-                }}
+                chain={chain}
                 connectButton={{
                   style: {
                     width: '100%',
@@ -97,6 +93,13 @@ export default function WalletConnect() {
                     borderRadius: '12px',
                     padding: '12px 24px',
                   }
+                }}
+                connectModal={{
+                  size: "compact",
+                  welcomeScreen: {
+                    title: "Welcome to RhythmRush",
+                    subtitle: "Connect your wallet to start playing",
+                  },
                 }}
               />
             </div>

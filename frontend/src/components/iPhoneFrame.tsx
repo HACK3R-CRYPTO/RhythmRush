@@ -13,28 +13,14 @@ export default function IPhoneFrame({
   bottomNavContent,
   backgroundClassName = "bg-rhythmrush" 
 }: iPhoneFrameProps) {
-  // Initialize with better mobile detection
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    
-    // Check screen width first
-    const width = window.innerWidth;
-    const isMobileWidth = width < 768;
-    
-    // Check if it's a touch device
-    const isTouchDevice = 'ontouchstart' in window || 
-                         navigator.maxTouchPoints > 0 ||
-                         (navigator as any).msMaxTouchPoints > 0;
-    
-    // Check user agent for mobile devices
-    const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
-    const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
-    
-    // Mobile if: small width OR (touch device AND mobile UA) OR (touch device AND small width)
-    return isMobileWidth || (isTouchDevice && isMobileUA) || (isTouchDevice && width < 1024);
-  });
+  // Always start with false to match server render, then update on client
+  const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Mark as mounted to prevent hydration mismatch
+    setMounted(true);
+    
     const checkMobile = () => {
       if (typeof window === 'undefined') return;
       
@@ -62,7 +48,7 @@ export default function IPhoneFrame({
       });
     };
 
-    // Check immediately
+    // Check immediately after mount
     checkMobile();
     
     // Listen for resize events

@@ -74,7 +74,7 @@ Celo offers low transaction fees. Your rewards stay in your pocket. Fast confirm
 
 ## Built for Celo Hackathon
 
-RhythmRush is built for the Celo mobile gaming hackathon. We focus on play to earn mechanics. Mobile first design means you play anywhere. Smart contracts handle reward distribution automatically. Top players earn real rewards. Built on Celo for low fees and fast transactions. Ready to scale to real users.
+RhythmRush is built for the Celo mobile gaming hackathon. We focus on play to earn mechanics. Mobile first design means you play anywhere. Smart contracts handle reward distribution automatically. Top players earn real rewards. Built on Celo for low fees and fast transactions. MiniPay integration enables seamless wallet connection and low-cost transactions. Ready to scale to real users.
 
 ## Deployed Contracts (Celo Sepolia)
 
@@ -140,6 +140,8 @@ RhythmRush/
 │   │   ├── simon-game/ # Simon game
 │   │   └── leaderboard/ # Leaderboard page
 │   ├── src/components/ # React components
+│   ├── src/utils/      # Utility functions
+│   │   └── minipay.ts  # MiniPay integration utilities
 │   └── public/        # Static assets and sounds
 └── README.md          # This file
 ```
@@ -154,6 +156,18 @@ RhythmRush/
 - **Animations**: Framer Motion
 - **Audio**: Web Audio API with fallback tones
 - **Notifications**: React Hot Toast
+
+## MiniPay Integration
+
+RhythmRush includes full MiniPay integration for seamless mobile wallet experience:
+
+- **Automatic Detection** - Detects MiniPay wallet automatically when users access via Opera Mini or MiniPay app
+- **cUSD Balance Display** - Shows Celo Dollar balance for MiniPay users on mint page
+- **Low-Cost Transactions** - MiniPay users benefit from sub-cent transaction fees
+- **Add Cash Deeplink** - Quick access to add funds directly from the app
+- **Mobile-Optimized** - Perfect for mobile-first gaming experience
+
+See `MINIPAY_INTEGRATION_EXPLAINED.md` for detailed integration documentation.
 
 ## Coming Soon
 

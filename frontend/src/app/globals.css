@@ -175,3 +175,9 @@ body {
 button[data-theme="light"] {
   font-family: system-ui, -apple-system, sans-serif !important;
 }
+
+/* Hide ConnectButton's connected state UI when wallet is connected on play page */
+.content-container [data-testid="connect-button"]:has(+ *),
+.content-container button[aria-label*="wallet"][aria-label*="connected"] {
+  display: none !important;
+}
