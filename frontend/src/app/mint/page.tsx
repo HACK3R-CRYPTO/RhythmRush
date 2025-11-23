@@ -13,6 +13,7 @@ import Loading from "@/components/Loading";
 import SuccessBanner from "@/components/SuccessBanner";
 import { MintingLoader } from "@/components/mint/MintingLoader";
 import { isMiniPayAvailable, checkCUSDBalance, openMiniPayAddCash } from "@/utils/minipay";
+import { AddressDisplay } from "@/components/molecules/AddressDisplay";
 
 // Contract addresses on Celo Sepolia
 const RUSH_TOKEN_ADDRESS = "0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0"; // New token with swap functionality and cUSD support
@@ -632,13 +633,15 @@ export default function MintPage() {
     );
   }
 
+
+
   const statusBarContent = (
     <>
       <div className="status-bar-item">
-        <div className={`status-indicator ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
-        <div className="truncate max-w-[150px]">
-          {account?.address ? `${account.address.substring(0, 6)}...${account.address.substring(account.address.length - 4)}` : "Not Connected"}
-        </div>
+        <AddressDisplay 
+          address={account?.address} 
+          isConnected={isConnected} 
+        />
       </div>
       <div className="status-bar-item">9:41</div>
     </>

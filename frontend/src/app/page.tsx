@@ -27,7 +27,9 @@ export default function Home() {
   }, [router]);
 
   const handleSkip = () => {
+    console.log("Tap to skip clicked");
     setLoading(false);
+    console.log("Calling router.replace('/wallet-connect')");
     router.replace('/wallet-connect');
   };
 
