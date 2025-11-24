@@ -43,6 +43,7 @@ export default function GamePage() {
   const toneGeneratorsRef = useRef<{ [key: string]: () => void }>({});
   const audioContextRef = useRef<AudioContext | null>(null);
   const gameDuration = 30000; // 30 seconds
+  const BEAT_INTERVAL = 800; // Faster! (was 1200)
 
   const buttons = [1, 2, 3, 4];
 
@@ -129,7 +130,7 @@ export default function GamePage() {
     startTimeRef.current = Date.now();
     targetStartTimeRef.current = Date.now(); // Track when target 1 started glowing
 
-    // Beat interval - change target every 1.2 seconds
+    // Beat interval - change target every BEAT_INTERVAL ms
     beatIntervalRef.current = setInterval(() => {
       setCurrentTarget((prev) => {
         const next = (prev % 4) + 1;
@@ -138,7 +139,7 @@ export default function GamePage() {
         playSound(`button${next}`);
         return next;
       });
-    }, 1200);
+    }, BEAT_INTERVAL);
 
     // Game timer
     gameTimerRef.current = setInterval(() => {
@@ -258,12 +259,12 @@ export default function GamePage() {
     // User should click the CURRENT glowing button (currentTarget)
     const timeSinceTargetStart = Date.now() - targetStartTimeRef.current;
     
-    // Perfect timing window: 0-600ms after target starts
-    // Good timing window: 600-1000ms after target starts
+    // Perfect timing window: 0-400ms after target starts
+    // Good timing window: 400-700ms after target starts
     // Miss: wrong button or too late
     
     if (clickedBeat === currentTarget) {
-      if (timeSinceTargetStart <= 600) {
+      if (timeSinceTargetStart <= 400) {
         // Perfect timing - clicked quickly after target appeared
         playSound('perfect');
         setScore((prev) => {
@@ -273,7 +274,7 @@ export default function GamePage() {
         });
         setFeedback("Perfect! +10");
         setFeedbackType("perfect");
-      } else if (timeSinceTargetStart <= 1000) {
+      } else if (timeSinceTargetStart <= 700) {
         // Good timing - clicked within window but not perfect
         playSound('good');
         setScore((prev) => {
@@ -358,46 +359,28 @@ export default function GamePage() {
   );
 
   return (
-    <IPhoneFrame backgroundClassName="bg-transparent" statusBarContent={statusBarContent}>
-      <div 
-        className="w-full overflow-hidden relative flex flex-col items-center"
-        style={{ 
-          height: 'calc(100% - 44px)', 
-          marginTop: '44px',
-          paddingTop: 'clamp(8px, 2vh, 16px)',
-          paddingBottom: 'clamp(8px, 2vh, 16px)',
-          paddingLeft: 'clamp(8px, 2vw, 16px)',
-          paddingRight: 'clamp(8px, 2vw, 16px)',
-          background: 'linear-gradient(135deg, #7B61FF 0%, #5d4ed3 100%)',
-          gap: 'clamp(4px, 1vh, 12px)',
-          justifyContent: 'space-between'
-        }}
-      >
+    <IPhoneFrame 
+      backgroundClassName="bg-gradient-to-br from-[#7B61FF] to-[#5d4ed3]" 
+      statusBarContent={statusBarContent}
+    >
+      <div className="w-full h-full flex flex-col pt-12 pb-8 px-4 justify-between">
         {/* Header */}
-        <div className="w-full text-center flex-shrink-0" style={{ paddingTop: 'clamp(4px, 1vh, 8px)' }}>
-          <h1 className="font-bold text-white drop-shadow-lg mb-1" style={{ fontSize: 'clamp(18px, 4vw, 24px)' }}>
+        <div className="w-full text-center flex-shrink-0">
+          <h1 className="font-bold text-white drop-shadow-lg mb-2 text-2xl">
             🎵 RhythmRush 🎵
           </h1>
           
-          <div style={{ marginBottom: 'clamp(4px, 1vh, 8px)' }}>
-            <div className="font-bold text-yellow-400 drop-shadow-lg" style={{ fontSize: 'clamp(32px, 8vw, 48px)' }}>
+          <div className="mb-4">
+            <div className="font-bold text-yellow-400 drop-shadow-lg text-5xl mb-1">
               {score}
             </div>
-            <div className="text-yellow-400" style={{ fontSize: 'clamp(14px, 3vw, 18px)' }}>
+            <div className="text-yellow-400 text-lg">
               {timeRemaining}s
             </div>
           </div>
 
           {/* Progress Bar */}
-          <div 
-            className="bg-white/20 rounded-full mx-auto overflow-hidden"
-            style={{ 
-              width: '85%',
-              maxWidth: '320px',
-              height: 'clamp(3px, 0.8vh, 6px)',
-              marginBottom: 'clamp(4px, 1vh, 8px)'
-            }}
-          >
+          <div className="bg-white/20 rounded-full mx-auto overflow-hidden w-[85%] max-w-[320px] h-1.5 mb-4">
             <motion.div 
               className="h-full bg-gradient-to-r from-yellow-400 to-orange-400"
               initial={{ width: 0 }}
@@ -410,20 +393,16 @@ export default function GamePage() {
           <motion.div
             key={currentTarget}
             animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 0.3 }}
-            className="font-bold text-white drop-shadow-lg"
-            style={{ fontSize: 'clamp(24px, 6vw, 32px)', marginTop: 'clamp(4px, 1vh, 8px)' }}
+            transition={{ duration: 0.2 }}
+            className="font-bold text-white drop-shadow-lg text-3xl mt-2"
           >
             Tap {currentTarget}!
           </motion.div>
         </div>
 
         {/* Buttons Section */}
-        <div className="w-full flex-shrink-0" style={{ paddingLeft: 'clamp(8px, 2vw, 16px)', paddingRight: 'clamp(8px, 2vw, 16px)' }}>
-          <div 
-            className="grid grid-cols-4 gap-2 mx-auto"
-            style={{ maxWidth: '360px', width: '100%' }}
-          >
+        <div className="w-full flex-shrink-0 px-2">
+          <div className="grid grid-cols-4 gap-3 mx-auto max-w-[360px]">
             {buttons.map((beat) => (
               <motion.button
                 key={beat}
@@ -431,17 +410,16 @@ export default function GamePage() {
                 whileTap={{ scale: 0.9 }}
                 onClick={() => handleButtonClick(beat)}
                 className={`
-                  aspect-square rounded-full border-2.5 border-white
-                  flex items-center justify-center font-bold text-white
-                  transition-all duration-100 w-full
+                  aspect-square rounded-full border-4
+                  flex items-center justify-center font-bold text-white text-xl
+                  transition-all duration-75 w-full shadow-lg
                   ${beat === currentTarget 
-                    ? 'bg-yellow-400 border-yellow-400 shadow-[0_0_20px_rgba(255,215,0,0.8)] animate-pulse' 
-                    : 'bg-white/20 hover:bg-white/30'
+                    ? 'bg-yellow-400 border-yellow-400 shadow-[0_0_25px_rgba(255,215,0,0.8)] animate-pulse scale-105' 
+                    : 'bg-white/10 border-white/20 hover:bg-white/20'
                   }
-                  ${feedbackType === "perfect" && beat === currentTarget ? "bg-green-500 border-green-500" : ""}
+                  ${feedbackType === "perfect" && beat === currentTarget ? "bg-green-500 border-green-500 scale-110" : ""}
                   ${feedbackType === "miss" && beat === currentTarget ? "bg-red-500 border-red-500" : ""}
                 `}
-                style={{ fontSize: 'clamp(16px, 4vw, 20px)' }}
               >
                 {beat}
               </motion.button>
@@ -449,36 +427,31 @@ export default function GamePage() {
           </div>
 
           {/* Feedback */}
-          {feedback && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`text-center font-bold ${
-                feedbackType === "perfect" ? "text-green-400" :
-                feedbackType === "good" ? "text-yellow-400" :
-                "text-red-400"
-              }`}
-              style={{ marginTop: 'clamp(8px, 2vh, 12px)', fontSize: 'clamp(12px, 3vw, 14px)' }}
-            >
-              {feedback}
-            </motion.div>
-          )}
+          <div className="h-8 mt-4 flex items-center justify-center">
+            {feedback && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`text-center font-bold text-lg ${
+                  feedbackType === "perfect" ? "text-green-400" :
+                  feedbackType === "good" ? "text-yellow-400" :
+                  "text-red-400"
+                }`}
+              >
+                {feedback}
+              </motion.div>
+            )}
+          </div>
         </div>
 
         {/* Controls */}
-        <div className="w-full flex-shrink-0" style={{ paddingLeft: 'clamp(8px, 2vw, 16px)', paddingRight: 'clamp(8px, 2vw, 16px)' }}>
+        <div className="w-full flex-shrink-0 px-4">
           {!gameActive ? (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={startGame}
-              className="w-full mx-auto bg-yellow-400 text-black font-bold rounded-xl shadow-lg"
-              style={{ 
-                maxWidth: '340px',
-                paddingTop: 'clamp(10px, 2.5vh, 14px)',
-                paddingBottom: 'clamp(10px, 2.5vh, 14px)',
-                fontSize: 'clamp(14px, 3.5vw, 16px)'
-              }}
+              className="w-full mx-auto bg-yellow-400 text-black font-bold rounded-xl shadow-lg py-4 text-lg max-w-[340px] block"
             >
               START GAME
             </motion.button>
@@ -487,13 +460,7 @@ export default function GamePage() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={endGame}
-              className="w-full mx-auto bg-gray-500 text-white font-bold rounded-xl shadow-lg opacity-50"
-              style={{ 
-                maxWidth: '340px',
-                paddingTop: 'clamp(10px, 2.5vh, 14px)',
-                paddingBottom: 'clamp(10px, 2.5vh, 14px)',
-                fontSize: 'clamp(14px, 3.5vw, 16px)'
-              }}
+              className="w-full mx-auto bg-white/20 text-white font-bold rounded-xl shadow-lg py-4 text-lg max-w-[340px] block backdrop-blur-sm border border-white/10"
             >
               END GAME
             </motion.button>
@@ -501,26 +468,13 @@ export default function GamePage() {
 
           {/* Instructions or Game Over */}
           {!gameActive && score === 0 && (
-            <div 
-              className="text-white/90 text-center mx-auto leading-relaxed"
-              style={{ 
-                marginTop: 'clamp(8px, 2vh, 12px)',
-                paddingLeft: 'clamp(8px, 2vw, 16px)',
-                paddingRight: 'clamp(8px, 2vw, 16px)',
-                maxWidth: '360px',
-                fontSize: 'clamp(10px, 2.5vw, 12px)'
-              }}
-            >
+            <div className="text-white/90 text-center mx-auto leading-relaxed mt-4 text-xs max-w-[360px]">
               <p><span className="text-yellow-400 font-bold">How to Play:</span></p>
-              <p className="mt-1">Watch for the <span className="text-yellow-400 font-bold">glowing yellow button</span>!</p>
-              <p className="mt-1">Tap the <span className="text-yellow-400 font-bold">glowing button</span> quickly to score points.</p>
-              <p className="mt-1">Perfect timing (0-600ms) = 10 points</p>
-              <p className="mt-1">Good timing (600-1000ms) = 5 points</p>
+              <p className="mt-1">Tap the <span className="text-yellow-400 font-bold">glowing button</span>!</p>
+              <p className="mt-1">Perfect (0-400ms) = 10 pts</p>
+              <p className="mt-1">Good (400-700ms) = 5 pts</p>
               <p className="mt-2 pt-2 border-t border-white/20">
-                <span className="text-yellow-400 font-bold">Keyboard Controls:</span>
-              </p>
-              <p className="mt-1 text-white/80">
-                Use <span className="text-yellow-400 font-bold">1, 2, 3, 4</span> or <span className="text-yellow-400 font-bold">Arrow Keys</span> or <span className="text-yellow-400 font-bold">WASD</span>
+                <span className="text-yellow-400 font-bold">Controls:</span> 1-4, Arrows, or WASD
               </p>
             </div>
           )}
@@ -528,20 +482,15 @@ export default function GamePage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="text-center"
-              style={{ 
-                marginTop: 'clamp(8px, 2vh, 12px)',
-                paddingLeft: 'clamp(8px, 2vw, 16px)',
-                paddingRight: 'clamp(8px, 2vw, 16px)'
-              }}
+              className="text-center mt-4"
             >
-              <p className="font-bold text-yellow-400 mb-2" style={{ fontSize: 'clamp(18px, 4.5vw, 20px)' }}>
+              <p className="font-bold text-yellow-400 mb-1 text-xl">
                 Game Over!
               </p>
-              <p className="text-white" style={{ fontSize: 'clamp(16px, 4vw, 18px)' }}>
-                Final Score: <span className="text-yellow-400 font-bold">{score}</span> points
+              <p className="text-white text-lg">
+                Score: <span className="text-yellow-400 font-bold">{score}</span>
               </p>
-              <p className="text-white/70 mt-2" style={{ fontSize: 'clamp(12px, 3vw, 14px)' }}>
+              <p className="text-white/50 text-xs mt-1">
                 Submitting score...
               </p>
             </motion.div>

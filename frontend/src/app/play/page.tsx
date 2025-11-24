@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import toast from 'react-hot-toast';
 import IPhoneFrame from "@/components/iPhoneFrame";
 import { GAMES } from "@/config/game";
+import { AddressDisplay } from "@/components/molecules/AddressDisplay";
 
 const GEM_CONTRACT_ADDRESS = "0xBdE05919CE1ee2E20502327fF74101A8047c37be";
 
@@ -163,19 +164,22 @@ export default function PlayPage() {
 
   const statusBarContent = (
     <>
+      <AddressDisplay 
+        address={account?.address} 
+        isConnected={!!wallet && !!account} 
+      />
       <div className="status-bar-item">
-        <div className={`status-indicator ${
-          wallet && account 
-            ? (isMinted ? 'bg-green-400' : 'bg-yellow-400') 
-            : 'bg-red-400'
-        }`}></div>
-        <div>
-          {wallet && account 
-            ? (isMinted ? `${gemBalance} Gem${gemBalance > 1 ? 's' : ''}` : "No Gem")
-            : "Not Connected"}
-        </div>
+        {wallet && account && (
+          <div className={`text-xs font-bold px-3 py-1.5 rounded-full border flex items-center gap-1.5 ${
+            isMinted 
+              ? 'bg-green-500/20 border-green-500/50 text-green-400' 
+              : 'bg-red-500/20 border-red-500/50 text-red-400'
+          }`}>
+            <span>{isMinted ? gemBalance : 0}</span>
+            <span className="text-[10px]">💎</span>
+          </div>
+        )}
       </div>
-      <div className="status-bar-item">9:41</div>
     </>
   );
 

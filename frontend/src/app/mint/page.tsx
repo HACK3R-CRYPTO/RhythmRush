@@ -13,6 +13,7 @@ import Loading from "@/components/Loading";
 import SuccessBanner from "@/components/SuccessBanner";
 import { MintingLoader } from "@/components/mint/MintingLoader";
 import { isMiniPayAvailable, checkCUSDBalance, openMiniPayAddCash } from "@/utils/minipay";
+import { AddressDisplay } from "@/components/molecules/AddressDisplay";
 
 // Contract addresses on Celo Sepolia
 const RUSH_TOKEN_ADDRESS = "0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0"; // New token with swap functionality and cUSD support
@@ -187,7 +188,7 @@ export default function MintPage() {
   const [claimInProgress, setClaimInProgress] = useState(false);
   const [rushBalance, setRushBalance] = useState<string>("0");
   const [celoBalance, setCeloBalance] = useState<string>("0");
-  const [buyRushAmount, setBuyRushAmount] = useState<string>("34"); // RUSH amount to buy
+  const [buyRushAmount, setBuyRushAmount] = useState<string>("35"); // RUSH amount to buy
   const [buyRushInProgress, setBuyRushInProgress] = useState(false);
   const [nftTokenId, setNftTokenId] = useState<string | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -635,10 +636,10 @@ export default function MintPage() {
   const statusBarContent = (
     <>
       <div className="status-bar-item">
-        <div className={`status-indicator ${isConnected ? 'bg-green-400' : 'bg-red-400'}`}></div>
-        <div className="truncate max-w-[150px]">
-          {account?.address ? `${account.address.substring(0, 6)}...${account.address.substring(account.address.length - 4)}` : "Not Connected"}
-        </div>
+        <AddressDisplay 
+          address={account?.address} 
+          isConnected={isConnected} 
+        />
       </div>
       <div className="status-bar-item">9:41</div>
     </>
@@ -663,193 +664,156 @@ export default function MintPage() {
             animate={{ opacity: 1, y: 0 }}
             className="content-container"
           >
-            <div className="text-center">
-              <h1 className="title-section">
+            <div className="text-center mb-6">
+              <h1 className="text-3xl font-bold">
                 <span className="text-rhythmrush-gold">MINT</span>
                 <span className="text-white"> GEM</span>
               </h1>
             </div>
 
-            <div className="card-blur">
-              {/* Balances */}
-              <div className="space-y-3 mb-6">
-                {isMiniPay && (
-                  <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 rounded-lg p-3">
-                    <span className="text-white font-semibold">cUSD Balance:</span>
-                    <span className="text-green-300 font-bold">{parseFloat(cUSDBalance).toFixed(2)} cUSD</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-white font-semibold">CELO Balance:</span>
-                  <span className="text-white font-bold">{parseFloat(celoBalance).toFixed(4)} CELO</span>
+            <div className="bg-black/20 backdrop-blur-md border border-white/10 rounded-3xl p-6 shadow-xl">
+              {/* Consolidated Balances */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-white/5 rounded-xl p-3 flex flex-col items-center justify-center border border-white/5">
+                  <span className="text-[10px] text-white/50 uppercase tracking-wider font-bold mb-1">CELO Balance</span>
+                  <span className="text-white font-mono font-bold">{parseFloat(celoBalance).toFixed(4)}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-semibold">RUSH Balance:</span>
-                    <button
-                      onClick={checkRushBalance}
-                      className="text-yellow-400 hover:text-yellow-300 text-xs"
-                      title="Refresh balance"
-                    >
-                      🔄
-                    </button>
-                  </div>
-                  <span className="text-rhythmrush-gold font-bold">
-                    {rushBalance ? (() => {
-                      // Format directly from string to avoid parseFloat rounding
-                      const parts = rushBalance.split('.');
-                      if (parts.length === 1) return `${parts[0]}.00`;
-                      const decimals = parts[1].substring(0, 2).padEnd(2, '0');
-                      return `${parts[0]}.${decimals}`;
-                    })() : '0.00'} RUSH
+                <div 
+                  className="bg-white/5 rounded-xl p-3 flex flex-col items-center justify-center border border-white/5 cursor-pointer hover:bg-white/10 transition-colors"
+                  onClick={checkRushBalance}
+                >
+                  <span className="text-[10px] text-white/50 uppercase tracking-wider font-bold mb-1 flex items-center gap-1">
+                    RUSH Balance <span className="text-[8px]">↻</span>
+                  </span>
+                  <span className="text-rhythmrush-gold font-mono font-bold">
+                    {rushBalance ? parseFloat(rushBalance).toFixed(2) : '0.00'}
                   </span>
                 </div>
+                {isMiniPay && (
+                  <div className="col-span-2 bg-green-500/10 rounded-xl p-2 flex items-center justify-center border border-green-500/20">
+                    <span className="text-green-400 text-xs font-mono font-bold">
+                      {parseFloat(cUSDBalance).toFixed(2)} cUSD
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Buy RUSH Section - Always show if balance is less than 34 RUSH */}
+              {/* Buy RUSH Section - Only if needed */}
               {(() => {
-                if (!rushBalance) return true; // Show if no balance loaded yet
-                // Compare using BigNumber to avoid rounding issues
-                try {
-                  const balanceBN = ethers.utils.parseEther(rushBalance);
-                  const requiredBN = ethers.BigNumber.from(PRICE_PER_GEM);
-                  return balanceBN.lt(requiredBN);
-                } catch {
-                  // Fallback to parseFloat comparison
-                  return parseFloat(rushBalance) < 34.0;
-                }
+                const balanceBN = rushBalance ? ethers.utils.parseEther(rushBalance) : ethers.BigNumber.from(0);
+                const requiredBN = ethers.BigNumber.from(PRICE_PER_GEM);
+                return balanceBN.lt(requiredBN);
               })() && (
-                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 mb-6">
-                  <div className="space-y-3">
-                    {/* Payment Method Selector - Only show cUSD option for MiniPay users */}
-                    {isMiniPay ? (
-                      <div>
-                        <label className="text-white/80 text-sm mb-2 block">Payment Method</label>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod("CELO")}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${
-                              paymentMethod === "CELO"
-                                ? "bg-rhythmrush-gold text-black"
-                                : "bg-white/10 text-white hover:bg-white/20"
-                            }`}
-                          >
-                            CELO
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setPaymentMethod("cUSD")}
-                            className={`flex-1 py-2 px-4 rounded-lg font-semibold transition ${
-                              paymentMethod === "cUSD"
-                                ? "bg-green-500 text-white"
-                                : "bg-white/10 text-white hover:bg-white/20"
-                            }`}
-                          >
-                            cUSD (MiniPay)
-                          </button>
-                        </div>
-                        {paymentMethod === "cUSD" && (
-                          <p className="text-green-300 text-xs mt-2">
-                            💚 Using MiniPay for seamless, low-cost transactions
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                        <p className="text-blue-300 text-xs text-center">
-                          💡 Tip: Use MiniPay for cUSD payments and lower transaction costs
-                        </p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <label className="text-white/80 text-sm mb-1 block">Amount (RUSH)</label>
-                      <input
-                        type="number"
-                        step="1"
-                        min="1"
-                        value={buyRushAmount}
-                        onChange={(e) => setBuyRushAmount(e.target.value)}
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-rhythmrush-gold"
-                        placeholder="34"
-                      />
-                      <div className="flex gap-2 mt-2 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => setBuyRushAmount("34")}
-                          className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs rounded-lg transition"
-                        >
-                          34 RUSH
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setBuyRushAmount("50")}
-                          className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs rounded-lg transition"
-                        >
-                          50 RUSH
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setBuyRushAmount("100")}
-                          className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs rounded-lg transition"
-                        >
-                          100 RUSH
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setBuyRushAmount("200")}
-                          className="px-3 py-1 bg-white/10 hover:bg-white/20 text-white text-xs rounded-lg transition"
-                        >
-                          200 RUSH
-                        </button>
-                      </div>
-                      <p className="text-white/60 text-xs mt-2">
-                        Cost: <span className={`font-semibold ${paymentMethod === "CELO" ? "text-yellow-400" : "text-green-400"}`}>
-                          {calculateCost(buyRushAmount)} {getCostLabel()}
-                        </span>
-                      </p>
+                <div className="mb-6">
+                  {/* Payment Method Toggle */}
+                  {isMiniPay && (
+                    <div className="flex bg-black/20 p-1 rounded-xl mb-4">
+                      <button
+                        onClick={() => setPaymentMethod("CELO")}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                          paymentMethod === "CELO" 
+                            ? "bg-rhythmrush-gold text-black shadow-lg" 
+                            : "text-white/50 hover:text-white"
+                        }`}
+                      >
+                        CELO
+                      </button>
+                      <button
+                        onClick={() => setPaymentMethod("cUSD")}
+                        className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
+                          paymentMethod === "cUSD" 
+                            ? "bg-green-500 text-white shadow-lg" 
+                            : "text-white/50 hover:text-white"
+                        }`}
+                      >
+                        cUSD
+                      </button>
                     </div>
-                    <button
-                      onClick={handleBuyRush}
-                      disabled={buyRushInProgress || parseFloat(buyRushAmount) < 1 || checkBalance() < parseFloat(calculateCost(buyRushAmount))}
-                      className={`w-full font-bold py-3 px-6 rounded-xl transition ${
-                        paymentMethod === "CELO"
-                          ? "bg-rhythmrush-gold hover:bg-yellow-400 disabled:bg-gray-500 disabled:cursor-not-allowed text-black"
-                          : "bg-green-500 hover:bg-green-600 disabled:bg-gray-500 disabled:cursor-not-allowed text-white"
-                      }`}
-                    >
-                      {buyRushInProgress ? "Buying..." : `BUY ${buyRushAmount} RUSH with ${getCostLabel()}`}
-                    </button>
+                  )}
+
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={buyRushAmount}
+                      onChange={(e) => setBuyRushAmount(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-2xl text-white font-bold text-center focus:outline-none focus:border-rhythmrush-gold/50 transition-colors"
+                      placeholder="0"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 text-sm font-bold">RUSH</span>
                   </div>
+
+                  <div className="flex justify-center gap-2 mt-3">
+                    {["34", "50", "100"].map((amount) => (
+                      <button
+                        key={amount}
+                        onClick={() => setBuyRushAmount(amount)}
+                        className="px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/5 rounded-lg text-[10px] text-white/70 transition-colors"
+                      >
+                        {amount}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="text-center mt-3 mb-4">
+                    <span className="text-xs text-white/40">
+                      Cost: <span className="text-white/80 font-mono">{calculateCost(buyRushAmount)} {paymentMethod}</span>
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleBuyRush}
+                    disabled={buyRushInProgress}
+                    className="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-xl transition-all border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {buyRushInProgress ? "Processing..." : `Buy ${buyRushAmount} RUSH`}
+                  </button>
                 </div>
               )}
-
-              {/* Gem Price */}
-              <div className="bg-white/5 rounded-xl p-4 mb-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-white/80">Gem Price:</span>
-                  <span className="text-rhythmrush-gold font-bold text-xl">34 RUSH</span>
-                </div>
-              </div>
 
               {/* Mint Button */}
-              <button
-                onClick={handleMint}
-                disabled={approvalInProgress || claimInProgress || parseFloat(rushBalance) < parseFloat(totalCost)}
-                className="w-full bg-rhythmrush-gold hover:bg-yellow-400 disabled:bg-gray-500 disabled:cursor-not-allowed text-black font-bold py-4 rounded-xl transition shadow-lg"
-              >
-                {approvalInProgress ? "Approving..." : claimInProgress ? "Minting..." : isMinted ? "Already Minted" : "MINT GEM"}
-              </button>
-
-              {isMinted && (
-                <button
-                  onClick={() => window.location.href = '/play'}
-                  className="w-full mt-4 bg-white/20 hover:bg-white/30 text-white font-bold py-4 rounded-xl transition"
-                >
-                  PLAY GAME
-                </button>
-              )}
+              <div className="pt-4 border-t border-white/10">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="text-white/60 text-sm">Price</span>
+                  <span className="text-rhythmrush-gold font-bold text-lg">35 RUSH</span>
+                </div>
+                
+                {isMinted ? (
+                  <div className="space-y-4">
+                    <div className="w-full bg-white/5 text-white/40 text-xs font-bold py-2 rounded-lg text-center border border-white/5 uppercase tracking-widest">
+                      Gem Minted Successfully
+                    </div>
+                    <motion.button
+                      initial={{ scale: 1 }}
+                      animate={{ scale: [1, 1.02, 1] }}
+                      transition={{ 
+                        repeat: Infinity, 
+                        duration: 2,
+                        ease: "easeInOut"
+                      }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => window.location.href = '/game'}
+                      className="w-full bg-[#FACC15] cursor-pointer text-black font-black py-4 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.4)] hover:shadow-[0_0_30px_rgba(250,204,21,0.6)] hover:bg-[#EAB308] transition-all text-xl flex items-center justify-center gap-2 group relative overflow-hidden"
+                    >
+                      <span className="relative z-10 flex items-center gap-2">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 fill-black">
+                          <path d="M5 3L19 12L5 21V3Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        PLAY GAME
+                      </span>
+                      <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    </motion.button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleMint}
+                    disabled={approvalInProgress || claimInProgress}
+                    className="w-full bg-rhythmrush-gold text-black font-bold py-4 rounded-xl hover:bg-yellow-400 transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                  >
+                    MINT GEM
+                  </button>
+                )}
+              </div>
             </div>
           </motion.div>
         </div>

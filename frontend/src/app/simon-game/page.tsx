@@ -41,6 +41,11 @@ export default function SimonGamePage() {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
   const sequenceTimeoutsRef = useRef<NodeJS.Timeout[]>([]);
 
+  // Game Constants
+  const FLASH_DURATION = 300; // Faster flash (was 600)
+  const SEQUENCE_DELAY = 600; // Faster sequence (was 1000)
+  const INITIAL_DELAY = 400; // Faster start (was 800)
+
   // Initialize audio files
   useEffect(() => {
     BUTTON_COLORS.forEach(color => {
@@ -82,34 +87,26 @@ export default function SimonGamePage() {
     setIsShowingSequence(true);
     setUserPattern([]); // Reset user pattern
     
-    console.log('Showing sequence:', pattern, 'Game active:', gameActive);
-    
     // Flash each button ONE AT A TIME using setTimeout chaining
     pattern.forEach((color, index) => {
       const timeout = setTimeout(() => {
         const button = document.getElementById(color);
-        console.log(`Flashing button ${index + 1}/${pattern.length}:`, color, button ? 'found' : 'NOT FOUND', 'Game active:', gameActive);
         
         if (button) {
           // Force remove any existing classes that might interfere
           button.classList.remove('pressed');
-          
-          // Remove opacity class that makes buttons dim during sequence
           button.classList.remove('opacity-50');
           
           // Make button flash VERY brightly and visibly
-          // Use direct style assignment to override everything
           button.style.cssText = `
             opacity: 0.2 !important;
             filter: brightness(5) saturate(2) !important;
             transform: scale(1.2) !important;
             box-shadow: 0 0 50px white, 0 0 80px rgba(255,255,255,1), inset 0 0 30px rgba(255,255,255,0.8) !important;
             z-index: 100 !important;
-            transition: all 200ms ease-in-out !important;
+            transition: all 150ms ease-in-out !important;
           `;
           playSound(color);
-          
-          console.log('Button flashed:', color, button.style.cssText);
           
           // Flash back to normal after visible flash
           setTimeout(() => {
@@ -121,7 +118,7 @@ export default function SimonGamePage() {
                 transform: scale(1) !important;
                 box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
                 z-index: 1 !important;
-                transition: all 200ms ease-in-out !important;
+                transition: all 150ms ease-in-out !important;
               `;
               
               // Re-add opacity class if sequence is still showing
@@ -129,20 +126,17 @@ export default function SimonGamePage() {
                 button.classList.add('opacity-50');
               }
             }
-          }, 600);
-        } else {
-          console.error('Button not found:', color);
+          }, FLASH_DURATION);
         }
-      }, index * 1000); // 1000ms (1 second) delay between each button flash
+      }, index * SEQUENCE_DELAY); 
       
       sequenceTimeoutsRef.current.push(timeout);
     });
     
     // Allow user input after entire sequence is shown
     const finalTimeout = setTimeout(() => {
-      console.log('Sequence complete, allowing user input');
       setIsShowingSequence(false);
-    }, pattern.length * 1000 + 800);
+    }, pattern.length * SEQUENCE_DELAY + INITIAL_DELAY);
     sequenceTimeoutsRef.current.push(finalTimeout);
   };
 
@@ -151,8 +145,6 @@ export default function SimonGamePage() {
     const randomColor = BUTTON_COLORS[Math.floor(Math.random() * BUTTON_COLORS.length)];
     const newPattern = [...gamePattern, randomColor];
     setGamePattern(newPattern);
-
-    console.log('Next sequence, pattern:', newPattern);
 
     // Show the FULL sequence replay immediately (all buttons, one at a time)
     // Small delay to ensure state is updated
@@ -313,17 +305,11 @@ export default function SimonGamePage() {
   );
 
   return (
-    <IPhoneFrame backgroundClassName="bg-transparent" statusBarContent={statusBarContent}>
-      <div 
-        className="w-full overflow-hidden relative flex flex-col items-center justify-center"
-        style={{ 
-          height: 'calc(100% - 44px)', 
-          marginTop: '44px',
-          padding: 'clamp(8px, 2vh, 16px)',
-          background: 'linear-gradient(135deg, #011F3F 0%, #001122 100%)',
-          minHeight: '100%'
-        }}
-      >
+    <IPhoneFrame 
+      backgroundClassName="bg-gradient-to-br from-[#011F3F] to-[#001122]" 
+      statusBarContent={statusBarContent}
+    >
+      <div className="w-full h-full flex flex-col items-center justify-center p-4">
         {/* Title */}
         <h1 
           className="text-white font-bold mb-2 text-center"

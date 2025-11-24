@@ -221,7 +221,16 @@ export default function SubmitScorePage() {
       fetchPlayerScore();
     } catch (error: any) {
       console.error("Error claiming rewards:", error);
-      toast.error(error?.message || "Failed to claim rewards");
+      
+      // Check for specific revert reasons
+      const errorMessage = error?.message || "";
+      const errorData = error?.data?.originalError?.data || error?.data?.message || "";
+      
+      if (errorMessage.includes("No prize pool available") || errorData.includes("No prize pool available")) {
+        toast.error("Prize pool is currently empty. Please try again later! 🏦");
+      } else {
+        toast.error(error?.message || "Failed to claim rewards");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -338,8 +347,8 @@ export default function SubmitScorePage() {
             </motion.div>
           )}
 
-          {/* Claim Rewards button - Hidden for now */}
-          {false && playerScore !== null && (playerScore as number) >= minThreshold && (
+          {/* Claim Rewards button */}
+          {playerScore !== null && (playerScore as number) >= minThreshold && (
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
