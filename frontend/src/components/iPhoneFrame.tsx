@@ -97,7 +97,7 @@ export default function IPhoneFrame({
         </div>
 
         {/* Status Bar */}
-        <div className="absolute top-[8px] left-0 right-0 h-[44px] bg-transparent flex items-center justify-between px-8 z-[45]">
+        <div className="absolute top-[8px] left-0 right-0 h-[44px] bg-transparent flex items-center justify-between px-3 z-[45]">
           {statusBarContent}
         </div>
 

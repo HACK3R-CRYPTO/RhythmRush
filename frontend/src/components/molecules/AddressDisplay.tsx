@@ -54,7 +54,7 @@ export const AddressDisplay: React.FC<AddressDisplayProps> = ({
         whileTap={{ scale: 0.98 }}
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          flex items-center gap-3 px-3 py-1.5 rounded-full
+          flex items-center gap-1.5 px-2 py-1.5 rounded-full
           bg-black/20 backdrop-blur-md border border-white/10
           hover:bg-black/30 hover:border-white/20 transition-all duration-200
           group
@@ -62,14 +62,11 @@ export const AddressDisplay: React.FC<AddressDisplayProps> = ({
       >
         <StatusIndicator isConnected={isConnected} />
         
-        <div className="flex flex-col items-start">
-          <span className="text-[10px] text-white/50 uppercase tracking-wider font-bold leading-none mb-0.5">
-            {isConnected ? 'Wallet' : 'Status'}
-          </span>
-          <span className="text-white text-xs font-mono font-medium tracking-wide">
+        <div className="flex flex-col items-start justify-center h-full">
+          <span className="text-white text-xs font-mono font-medium tracking-wide leading-none">
             {isConnected && address ? 
-              `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : 
-              "Not Connected"
+              `${address.substring(0, 4)}...${address.substring(address.length - 4)}` : 
+              "Connect"
             }
           </span>
         </div>
