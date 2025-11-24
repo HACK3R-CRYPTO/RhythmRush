@@ -109,14 +109,14 @@ const GEM_ABI = [
 const SWAP_ABI = [
   {
     inputs: [],
-    name: "buyTokens",
+    name: "buyRushTokens",
     outputs: [],
     stateMutability: "payable",
     type: "function"
   },
   {
     inputs: [{ name: "amount", type: "uint256" }],
-    name: "buyTokensWithCUSD",
+    name: "buyRushTokensWithCUSD",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function"
@@ -379,7 +379,7 @@ export default function MintPage() {
         
         const transaction = prepareContractCall({
           contract: swapContract,
-          method: "function buyTokens() payable",
+          method: "function buyRushTokens() payable",
           params: [],
           value: BigInt(celoAmountWei.toString()),
         });
@@ -463,7 +463,7 @@ export default function MintPage() {
 
         const buyTx = prepareContractCall({
           contract: swapContract,
-          method: "function buyTokensWithCUSD(uint256)",
+          method: "function buyRushTokensWithCUSD(uint256)",
           params: [BigInt(cusdAmountWei.toString())],
         });
 
