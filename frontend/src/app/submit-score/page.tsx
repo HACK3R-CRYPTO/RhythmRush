@@ -2,10 +2,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { useWallet } from "@/context/WalletContext";
-import { ethers } from "ethers";
 import { motion } from "framer-motion";
 import toast from 'react-hot-toast';
 import IPhoneFrame from "@/components/iPhoneFrame";
+import { client } from "@/client";
+import { defineChain, getContract } from "thirdweb";
+import { prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
 
 const REWARDS_CONTRACT_ADDRESS = "0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280";
 
@@ -97,13 +99,32 @@ export default function SubmitScorePage() {
     }
   }, [account]);
 
+  const chain = defineChain({
+    id: 11142220,
+    name: "Celo Sepolia",
+    rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+    nativeCurrency: {
+      name: "CELO",
+      symbol: "CELO",
+      decimals: 18
+    }
+  });
+
+  const rewardsContract = getContract({
+    client,
+    chain,
+    address: REWARDS_CONTRACT_ADDRESS
+  });
+
   const fetchPlayerScore = async () => {
-    if (!account?.address || !(typeof window !== 'undefined' && (window as any).ethereum)) return;
+    if (!account?.address) return;
 
     try {
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
-      const score = await rewardsContract.playerScores(account.address);
+      const score = await readContract({
+        contract: rewardsContract,
+        method: "function playerScores(address) view returns (uint256)",
+        params: [account.address],
+      });
       setPlayerScore(Number(score));
     } catch (error) {
       console.error("Error fetching player score:", error);
@@ -111,12 +132,12 @@ export default function SubmitScorePage() {
   };
 
   const fetchMinThreshold = async () => {
-    if (!(typeof window !== 'undefined' && (window as any).ethereum)) return;
-
     try {
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
-      const threshold = await rewardsContract.minScoreThreshold();
+      const threshold = await readContract({
+        contract: rewardsContract,
+        method: "function minScoreThreshold() view returns (uint256)",
+        params: [],
+      });
       setMinThreshold(Number(threshold));
       return Number(threshold);
     } catch (error) {
@@ -126,7 +147,7 @@ export default function SubmitScorePage() {
   };
 
   const handleSubmitScore = useCallback(async () => {
-    if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
+    if (!account) {
       toast.error("Please connect your wallet");
       return;
     }
@@ -144,13 +165,23 @@ export default function SubmitScorePage() {
 
     try {
       setIsSubmitting(true);
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const signer = provider.getSigner();
-      const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
-      const rewardsWithSigner = rewardsContract.connect(signer);
 
-      const tx = await rewardsWithSigner.submitScore(scoreNum);
-      await tx.wait();
+      const submitTx = prepareContractCall({
+        contract: rewardsContract,
+        method: "function submitScore(uint256)",
+        params: [BigInt(scoreNum)],
+      });
+
+      const { transactionHash } = await sendTransaction({
+        account,
+        transaction: submitTx,
+      });
+
+      await waitForReceipt({
+        client,
+        chain,
+        transactionHash,
+      });
 
       toast.success(`Score of ${scoreNum} submitted! 🎉`, {
         duration: 3000
@@ -170,7 +201,7 @@ export default function SubmitScorePage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [account, score, minThreshold, isSubmitting]);
+  }, [account, score, minThreshold, isSubmitting, rewardsContract, chain]);
 
   // Auto-submit score when coming from game (from sessionStorage, not URL)
   useEffect(() => {
@@ -199,20 +230,30 @@ export default function SubmitScorePage() {
   }, [scoreFromStorage, account, thresholdLoaded, hasAutoSubmitted, isSubmitting, minThreshold, handleSubmitScore]);
 
   const handleClaimRewards = async () => {
-    if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
+    if (!account) {
       toast.error("Please connect your wallet");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const signer = provider.getSigner();
-      const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
-      const rewardsWithSigner = rewardsContract.connect(signer);
 
-      const tx = await rewardsWithSigner.claimRewards();
-      await tx.wait();
+      const claimTx = prepareContractCall({
+        contract: rewardsContract,
+        method: "function claimRewards()",
+        params: [],
+      });
+
+      const { transactionHash } = await sendTransaction({
+        account,
+        transaction: claimTx,
+      });
+
+      await waitForReceipt({
+        client,
+        chain,
+        transactionHash,
+      });
 
       toast.success("Rewards claimed successfully! 🎉", {
         duration: 3000
