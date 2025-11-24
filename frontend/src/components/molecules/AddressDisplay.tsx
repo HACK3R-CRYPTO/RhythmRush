@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StatusIndicator } from '../atoms/StatusIndicator';
 import toast from 'react-hot-toast';
-import { useDisconnect, useActiveWallet } from 'thirdweb/react';
+import { useWallet } from '@/context/WalletContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AddressDisplayProps {
@@ -124,12 +124,11 @@ export const AddressDisplay: React.FC<AddressDisplayProps> = ({
 };
 
 const DisconnectButton = ({ onClose }: { onClose: () => void }) => {
-  const { disconnect } = useDisconnect();
-  const wallet = useActiveWallet();
+  const { disconnect, wallet } = useWallet();
 
   const onDisconnect = () => {
     if (wallet) {
-      disconnect(wallet);
+      disconnect();
       toast.success("Wallet disconnected", {
         icon: '👋',
         style: {

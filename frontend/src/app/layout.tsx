@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { ThirdwebProvider } from "thirdweb/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { client } from "@/client";
+import { WalletProvider } from "@/context/WalletContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +28,9 @@ export default function RootLayout({
       <body suppressHydrationWarning={true}>
         <QueryClientProvider client={queryClient}>
           <ThirdwebProvider>
-            {children}
+            <WalletProvider>
+              {children}
+            </WalletProvider>
             <Toaster 
               position="top-center"
               toastOptions={{

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import toast from 'react-hot-toast';
-import { useActiveWallet, useActiveAccount } from "thirdweb/react";
+import { useWallet } from "@/context/WalletContext";
 import { client } from "@/client";
 import { defineChain, getContract } from "thirdweb";
 import { getTotalClaimedSupply, nextTokenIdToMint } from "thirdweb/extensions/erc721";
@@ -14,6 +14,8 @@ import SuccessBanner from "@/components/SuccessBanner";
 import { MintingLoader } from "@/components/mint/MintingLoader";
 import { isMiniPayAvailable, checkCUSDBalance, openMiniPayAddCash } from "@/utils/minipay";
 import { AddressDisplay } from "@/components/molecules/AddressDisplay";
+import { prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
+import { useActiveWalletChain } from "thirdweb/react";
 
 // Contract addresses on Celo Sepolia
 const RUSH_TOKEN_ADDRESS = "0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0"; // New token with swap functionality and cUSD support
@@ -103,18 +105,18 @@ const GEM_ABI = [
   }
 ];
 
-// Swap contract ABI
+// Swap Contract ABI
 const SWAP_ABI = [
   {
     inputs: [],
-    name: "buyRushTokens",
+    name: "buyTokens",
     outputs: [],
     stateMutability: "payable",
     type: "function"
   },
   {
-    inputs: [{ name: "cusdAmount", type: "uint256" }],
-    name: "buyRushTokensWithCUSD",
+    inputs: [{ name: "amount", type: "uint256" }],
+    name: "buyTokensWithCUSD",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function"
@@ -181,8 +183,9 @@ const CUSD_ABI = [
 ];
 
 export default function MintPage() {
+  const { isConnected, account, wallet } = useWallet();
+  const [quantity, setQuantity] = useState(1);
   const [isMinted, setIsMinted] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [approvalInProgress, setApprovalInProgress] = useState(false);
   const [claimInProgress, setClaimInProgress] = useState(false);
@@ -198,8 +201,7 @@ export default function MintPage() {
   
   const count = 1; // Always mint 1 Gem at a time
 
-  const wallet = useActiveWallet();
-  const account = useActiveAccount();
+
 
   // Celo Sepolia Testnet
   const chain = defineChain({
@@ -225,7 +227,6 @@ export default function MintPage() {
 
   useEffect(() => {
     if (wallet && account) {
-      setIsConnected(true);
       setIsLoading(false);
       checkRushBalance();
       checkCeloBalance();
@@ -235,7 +236,6 @@ export default function MintPage() {
         checkCUSDBalance(account.address).then(setCUSDBalance);
       }
     } else {
-      setIsConnected(false);
       setIsLoading(false);
     }
   }, [wallet, account, isMiniPay]);
@@ -273,20 +273,27 @@ export default function MintPage() {
     return `${integerPart}.${twoDecimals}`;
   };
 
+  const activeChain = useActiveWalletChain();
+
   const checkRushBalance = async () => {
-    if (!account?.address || !(typeof window !== 'undefined' && (window as any).ethereum)) return;
+    if (!account?.address) return;
 
     try {
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
       console.log("Checking RUSH balance from token address:", RUSH_TOKEN_ADDRESS);
-      const tokenContract = new ethers.Contract(RUSH_TOKEN_ADDRESS, ERC20_ABI, provider);
-      const balance = await tokenContract.balanceOf(account.address);
+      const tokenContract = getContract({
+        client,
+        chain,
+        address: RUSH_TOKEN_ADDRESS,
+      });
+
+      const balance = await readContract({
+        contract: tokenContract,
+        method: "function balanceOf(address) view returns (uint256)",
+        params: [account.address],
+      });
+
       const balanceFormatted = formatEther(balance);
-      const balanceDisplay = formatBalance(balance);
-      console.log("RUSH balance (raw):", balance.toString());
       console.log("RUSH balance (formatted):", balanceFormatted);
-      console.log("RUSH balance (display):", balanceDisplay);
-      // Store both: formatted for calculations, display for UI
       setRushBalance(balanceFormatted);
     } catch (error) {
       console.error("Error checking RUSH balance:", error);
@@ -294,10 +301,13 @@ export default function MintPage() {
   };
 
   const checkCeloBalance = async () => {
-    if (!account?.address || !(typeof window !== 'undefined' && (window as any).ethereum)) return;
-
+    if (!account?.address) return;
+    // For native balance, we can still use a simple provider or thirdweb's utility if available, 
+    // but for now let's stick to a public RPC provider to avoid window.ethereum dependency for reading.
+    // Or better, use Thirdweb's useWalletBalance hook if we were using it, but here we are in a function.
+    // Let's use a public provider for reading.
     try {
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+      const provider = new ethers.providers.JsonRpcProvider(chain.rpc);
       const balance = await provider.getBalance(account.address);
       setCeloBalance(formatEther(balance));
     } catch (error) {
@@ -306,12 +316,15 @@ export default function MintPage() {
   };
 
   const checkGemBalance = async () => {
-    if (!account?.address || !(typeof window !== 'undefined' && (window as any).ethereum)) return;
+    if (!account?.address) return;
 
     try {
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const gemContractInstance = new ethers.Contract(GEM_CONTRACT_ADDRESS, GEM_ABI, provider);
-      const balance = await gemContractInstance.balanceOf(account.address);
+      const balance = await readContract({
+        contract: gemContract,
+        method: "function balanceOf(address) view returns (uint256)",
+        params: [account.address],
+      });
+      
       if (Number(balance) > 0) {
         setIsMinted(true);
       }
@@ -321,13 +334,13 @@ export default function MintPage() {
   };
 
   const handleBuyRush = async () => {
-    if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
+    if (!account) {
       toast.error("Please connect your wallet first");
       return;
     }
 
     if (!SWAP_CONTRACT_ADDRESS) {
-      toast.error("Swap contract not deployed yet. Please wait for deployment.");
+      toast.error("Swap contract not deployed yet.");
       return;
     }
 
@@ -339,12 +352,14 @@ export default function MintPage() {
       }
 
       setBuyRushInProgress(true);
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const signer = provider.getSigner();
-      const swapContract = new ethers.Contract(SWAP_CONTRACT_ADDRESS, SWAP_ABI, signer);
+
+      const swapContract = getContract({
+        client,
+        chain,
+        address: SWAP_CONTRACT_ADDRESS,
+      });
 
       if (paymentMethod === "CELO") {
-        // Buy with CELO
         const celoAmount = rushAmount / EXCHANGE_RATE;
         const minCelo = 0.01;
         
@@ -362,21 +377,29 @@ export default function MintPage() {
 
         const celoAmountWei = ethers.utils.parseEther(celoAmount.toFixed(18));
         
-        const tx = await swapContract.buyRushTokens({
-          value: celoAmountWei,
-          gasLimit: 200000
+        const transaction = prepareContractCall({
+          contract: swapContract,
+          method: "function buyTokens() payable",
+          params: [],
+          value: BigInt(celoAmountWei.toString()),
         });
 
         toast.loading(`Buying ${rushAmount} RUSH tokens with CELO...`, { id: "buy-rush" });
-        const receipt = await tx.wait();
+        
+        const { transactionHash } = await sendTransaction({
+          account,
+          transaction,
+        });
+
+        await waitForReceipt({
+          client,
+          chain,
+          transactionHash,
+        });
         
         toast.success(`Successfully bought ${rushAmount} RUSH tokens! 🎉`, { id: "buy-rush" });
         
-        // Refresh balances
-        await Promise.all([
-          checkRushBalance(),
-          checkCeloBalance()
-        ]);
+        await Promise.all([checkRushBalance(), checkCeloBalance()]);
       } else {
         // Buy with cUSD (MiniPay only)
         if (!isMiniPay) {
@@ -385,7 +408,6 @@ export default function MintPage() {
           return;
         }
 
-        // 0.17 cUSD = 30 RUSH, so for rushAmount RUSH: (rushAmount / 30) * 0.17
         const cusdAmount = (rushAmount / 30) * 0.17;
         const minCUSD = 0.01;
         
@@ -401,35 +423,71 @@ export default function MintPage() {
           return;
         }
 
-        // Check and approve cUSD spending
-        const cusdContract = new ethers.Contract(CUSD_TOKEN_ADDRESS, CUSD_ABI, signer);
+        const cusdContract = getContract({
+          client,
+          chain,
+          address: CUSD_TOKEN_ADDRESS,
+        });
+
         const cusdAmountWei = ethers.utils.parseEther(cusdAmount.toFixed(18));
-        const allowance = await cusdContract.allowance(account.address, SWAP_CONTRACT_ADDRESS);
         
-        if (allowance.lt(cusdAmountWei)) {
+        // Check allowance
+        const allowance = await readContract({
+          contract: cusdContract,
+          method: "function allowance(address, address) view returns (uint256)",
+          params: [account.address, SWAP_CONTRACT_ADDRESS],
+        });
+        
+        if (BigInt(allowance.toString()) < BigInt(cusdAmountWei.toString())) {
           toast.loading("Approving cUSD spending...", { id: "approve-cusd" });
-          const approveTx = await cusdContract.approve(SWAP_CONTRACT_ADDRESS, ethers.constants.MaxUint256);
-          await approveTx.wait();
+          
+          const approveTx = prepareContractCall({
+            contract: cusdContract,
+            method: "function approve(address, uint256)",
+            params: [SWAP_CONTRACT_ADDRESS, BigInt(ethers.constants.MaxUint256.toString())],
+          });
+
+          const { transactionHash } = await sendTransaction({
+            account,
+            transaction: approveTx,
+          });
+
+          await waitForReceipt({
+            client,
+            chain,
+            transactionHash,
+          });
+          
           toast.success("cUSD approved!", { id: "approve-cusd" });
         }
 
-        const tx = await swapContract.buyRushTokensWithCUSD(cusdAmountWei, {
-          gasLimit: 200000
+        const buyTx = prepareContractCall({
+          contract: swapContract,
+          method: "function buyTokensWithCUSD(uint256)",
+          params: [BigInt(cusdAmountWei.toString())],
         });
 
         toast.loading(`Buying ${rushAmount} RUSH tokens with cUSD...`, { id: "buy-rush" });
-        const receipt = await tx.wait();
+        
+        const { transactionHash } = await sendTransaction({
+          account,
+          transaction: buyTx,
+        });
+
+        await waitForReceipt({
+          client,
+          chain,
+          transactionHash,
+        });
         
         toast.success(`Successfully bought ${rushAmount} RUSH tokens! 🎉`, { id: "buy-rush" });
         
-        // Refresh balances
         await Promise.all([
           checkRushBalance(),
           checkCUSDBalance(account.address).then(setCUSDBalance)
         ]);
       }
       
-      // Also refresh after a short delay to ensure balance is updated on-chain
       setTimeout(async () => {
         await checkRushBalance();
         if (paymentMethod === "CELO") {
@@ -441,7 +499,7 @@ export default function MintPage() {
         }
       }, 2000);
       
-      setBuyRushAmount("34"); // Reset to Gem price
+      setBuyRushAmount("34");
     } catch (error: any) {
       console.error("Error buying RUSH tokens:", error);
       toast.error(error?.message || "Failed to buy RUSH tokens", { id: "buy-rush" });
@@ -480,105 +538,115 @@ export default function MintPage() {
   };
 
   const handleMint = async () => {
-    if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
+    if (!account) {
       toast.error("Please connect your wallet first");
       return;
     }
 
     try {
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const signer = provider.getSigner();
-
-      const tokenContract = new ethers.Contract(RUSH_TOKEN_ADDRESS, ERC20_ABI, provider);
-      const requiredAmount = PRICE_PER_GEM; // Always 1 Gem
-
+      const requiredAmount = PRICE_PER_GEM;
       console.log("Minting Gem - Token address:", RUSH_TOKEN_ADDRESS);
-      console.log("Required amount:", formatEther(requiredAmount), "RUSH");
+
+      const tokenContract = getContract({
+        client,
+        chain,
+        address: RUSH_TOKEN_ADDRESS,
+      });
 
       // Check balance
-      const balance = await tokenContract.balanceOf(account.address);
-      const balanceFormatted = formatEther(balance);
-      const requiredFormatted = formatEther(requiredAmount);
-      console.log("Current balance:", balanceFormatted, "RUSH");
-      console.log("Required balance:", requiredFormatted, "RUSH");
-      
-      // Check exact balance - no tolerance
-      if (balance.lt(requiredAmount)) {
-        toast.error(`Insufficient RUSH balance. You have ${parseFloat(balanceFormatted).toFixed(6)} RUSH, but need exactly ${requiredFormatted} RUSH tokens.`);
+      const balance = await readContract({
+        contract: tokenContract,
+        method: "function balanceOf(address) view returns (uint256)",
+        params: [account.address],
+      });
+
+      if (BigInt(balance.toString()) < requiredAmount) {
+        toast.error(`Insufficient RUSH balance.`);
         return;
       }
 
-      // Check and approve
-      const allowance = await tokenContract.allowance(account.address, GEM_CONTRACT_ADDRESS);
-      if (allowance.lt(requiredAmount)) {
+      // Check allowance
+      const allowance = await readContract({
+        contract: tokenContract,
+        method: "function allowance(address, address) view returns (uint256)",
+        params: [account.address, GEM_CONTRACT_ADDRESS],
+      });
+
+      if (BigInt(allowance.toString()) < requiredAmount) {
         setApprovalInProgress(true);
-        const tokenWithSigner = tokenContract.connect(signer);
-        const approvalTx = await tokenWithSigner.approve(GEM_CONTRACT_ADDRESS, requiredAmount);
-        await approvalTx.wait();
+        
+        const approveTx = prepareContractCall({
+          contract: tokenContract,
+          method: "function approve(address, uint256)",
+          params: [GEM_CONTRACT_ADDRESS, requiredAmount],
+        });
+
+        const { transactionHash } = await sendTransaction({
+          account,
+          transaction: approveTx,
+        });
+
+        await waitForReceipt({
+          client,
+          chain,
+          transactionHash,
+        });
+
         setApprovalInProgress(false);
         toast.success("RUSH tokens approved!");
       }
 
       // Mint Gem
       setClaimInProgress(true);
-      const gemContractInstance = new ethers.Contract(GEM_CONTRACT_ADDRESS, GEM_ABI, provider);
-      
-      // Verify payment token matches before attempting claim
-      const gemPaymentToken = await gemContractInstance.paymentToken();
-      console.log("Gem contract payment token:", gemPaymentToken);
-      console.log("Expected payment token:", RUSH_TOKEN_ADDRESS);
-      
-      if (gemPaymentToken.toLowerCase() !== RUSH_TOKEN_ADDRESS.toLowerCase()) {
-        throw new Error(`Payment token mismatch! Gem contract expects ${gemPaymentToken} but we're using ${RUSH_TOKEN_ADDRESS}. Please wait for contract update or contact support.`);
-      }
       
       // Check if claim is active
-      const isClaimActive = await gemContractInstance.claimActive();
-      console.log("Claim active:", isClaimActive);
+      const isClaimActive = await readContract({
+        contract: gemContract,
+        method: "function claimActive() view returns (bool)",
+        params: [],
+      });
+
       if (!isClaimActive) {
-        throw new Error("Claim is not active. Please contact support.");
+        throw new Error("Claim is not active.");
       }
       
-      const gemWithSigner = gemContractInstance.connect(signer);
+      const claimTx = prepareContractCall({
+        contract: gemContract,
+        method: "function claim(address, uint256, address, uint256, (bytes32[], uint256, uint256, address), bytes) payable",
+        params: [
+          account.address,
+          BigInt(1),
+          RUSH_TOKEN_ADDRESS,
+          PRICE_PER_GEM,
+          [
+            [], // proof
+            BigInt(0), // quantityLimitPerWallet
+            BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935"), // pricePerToken (Max uint256)
+            "0x0000000000000000000000000000000000000000" // currency
+          ],
+          "0x"
+        ],
+      });
 
-      console.log("Calling claim with:");
-      console.log("  Receiver:", account.address);
-      console.log("  Quantity: 1");
-      console.log("  Currency (RUSH Token):", RUSH_TOKEN_ADDRESS);
-      console.log("  Price per token:", formatEther(PRICE_PER_GEM), "RUSH");
+      const { transactionHash } = await sendTransaction({
+        account,
+        transaction: claimTx,
+      });
 
-      const claimTx = await gemWithSigner.claim(
-        account.address,
-        1, // Always mint 1 Gem
-        RUSH_TOKEN_ADDRESS,
-        PRICE_PER_GEM,
-        [[], "0", "115792089237316195423570985008687907853269984665640564039457584007913129639935", "0x0000000000000000000000000000000000000000"],
-        "0x",
-        { gasLimit: 500000 } // Increased gas limit
-      );
-
-      const receipt = await claimTx.wait();
+      const receipt = await waitForReceipt({
+        client,
+        chain,
+        transactionHash,
+      });
       
-      // Check if transaction was successful
-      if (receipt.status === 0) {
-        throw new Error("Transaction reverted. Please check your balance and try again.");
-      }
-      
-      setTxHash(receipt.transactionHash);
+      setTxHash(transactionHash);
       setIsMinted(true);
       setClaimInProgress(false);
 
-      toast.success("Gem minted successfully! 🎉", {
-        duration: 3000
-      });
+      toast.success("Gem minted successfully! 🎉", { duration: 3000 });
 
-      // Refresh balances immediately
-      await Promise.all([
-        checkRushBalance(),
-        checkGemBalance()
-      ]);
+      await Promise.all([checkRushBalance(), checkGemBalance()]);
       
-      // Also refresh after a short delay to ensure balance is updated on-chain
       setTimeout(async () => {
         await checkRushBalance();
         await checkGemBalance();
@@ -588,28 +656,7 @@ export default function MintPage() {
       console.error("Transaction error:", error);
       setApprovalInProgress(false);
       setClaimInProgress(false);
-      
-      // Extract more detailed error message
-      let errorMessage = "Transaction failed";
-      if (error?.message) {
-        errorMessage = error.message;
-        // Check for common revert reasons
-        if (error.message.includes("revert")) {
-          if (error.message.includes("Claim is not active")) {
-            errorMessage = "Claim is not active. Please contact support.";
-          } else if (error.message.includes("Invalid payment token")) {
-            errorMessage = "Invalid payment token. The Gem contract may not be updated yet.";
-          } else if (error.message.includes("Invalid price")) {
-            errorMessage = "Price mismatch. Please refresh and try again.";
-          } else if (error.message.includes("Exceeds max supply")) {
-            errorMessage = "Maximum supply reached.";
-          } else {
-            errorMessage = `Transaction reverted: ${error.message}`;
-          }
-        }
-      }
-      
-      toast.error(errorMessage);
+      toast.error(error?.message || "Transaction failed");
     }
   };
 
@@ -621,12 +668,34 @@ export default function MintPage() {
     return (
       <IPhoneFrame backgroundClassName="bg-rhythmrush">
         <div className="flex flex-col items-center justify-center h-full p-6">
-          <p className="text-white text-xl mb-4">Please connect your wallet</p>
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8 p-6 bg-white/10 rounded-full backdrop-blur-md border border-white/20 shadow-[0_0_30px_rgba(255,215,0,0.3)]"
+          >
+            <span className="text-6xl">💎</span>
+          </motion.div>
+          
+          <h1 className="text-4xl font-black mb-2 text-center">
+            <span className="text-rhythmrush-gold">MINT</span>
+            <span className="text-white"> GEM</span>
+          </h1>
+          
+          <p className="text-white/60 text-center mb-8 text-lg">
+            Connect your wallet to mint Gems and start playing
+          </p>
+
           <button
             onClick={() => window.location.href = '/wallet-connect'}
-            className="bg-rhythmrush-gold text-black px-6 py-3 rounded-xl font-bold hover:bg-yellow-400 transition"
+            className="w-full bg-rhythmrush-gold text-black px-6 py-4 rounded-xl font-bold text-xl hover:bg-yellow-400 transition shadow-lg hover:shadow-[0_0_20px_rgba(255,215,0,0.5)] flex items-center justify-center gap-2"
           >
-            Connect Wallet
+            <span>Connect Wallet</span>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6">
+              <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 12H9" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M12 9V15" stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
         </div>
       </IPhoneFrame>
@@ -808,7 +877,7 @@ export default function MintPage() {
                   <button
                     onClick={handleMint}
                     disabled={approvalInProgress || claimInProgress}
-                    className="w-full bg-rhythmrush-gold text-black font-bold py-4 rounded-xl hover:bg-yellow-400 transition-all shadow-lg shadow-yellow-500/20 disabled:opacity-50 disabled:cursor-not-allowed text-lg"
+                        className="w-full bg-[#FACC15] cursor-pointer text-black font-black py-4 rounded-xl shadow-[0_0_20px_rgba(250,204,21,0.4)] hover:shadow-[0_0_30px_rgba(250,204,21,0.6)] hover:bg-[#EAB308] transition-all text-xl flex items-center justify-center gap-2 group relative overflow-hidden"
                   >
                     MINT GEM
                   </button>
