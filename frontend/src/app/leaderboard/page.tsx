@@ -2,10 +2,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { useWallet } from "@/context/WalletContext";
-import { ethers } from "ethers";
 import { motion } from "framer-motion";
 import IPhoneFrame from "@/components/iPhoneFrame";
 import Loading from "@/components/Loading";
+import { client } from "@/client";
+import { defineChain, getContract } from "thirdweb";
+import { readContract } from "thirdweb";
 
 const REWARDS_CONTRACT_ADDRESS = "0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280";
 
@@ -62,19 +64,33 @@ export default function LeaderboardPage() {
     fetchLeaderboard();
   }, []);
 
-  const fetchLeaderboard = async () => {
-    if (!(typeof window !== 'undefined' && (window as any).ethereum)) {
-      console.log("No ethereum provider found");
-      setIsLoading(false);
-      return;
+  const chain = defineChain({
+    id: 11142220,
+    name: "Celo Sepolia",
+    rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+    nativeCurrency: {
+      name: "CELO",
+      symbol: "CELO",
+      decimals: 18
     }
+  });
 
+  const rewardsContract = getContract({
+    client,
+    chain,
+    address: REWARDS_CONTRACT_ADDRESS
+  });
+
+  const fetchLeaderboard = async () => {
     try {
       console.log("Fetching leaderboard...");
-        const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
       
-      const length = await rewardsContract.getLeaderboardLength();
+      const length = await readContract({
+        contract: rewardsContract,
+        method: "function getLeaderboardLength() view returns (uint256)",
+        params: [],
+      });
+      
       const totalEntries = Number(length);
       console.log("Total leaderboard entries:", totalEntries);
       
@@ -82,7 +98,13 @@ export default function LeaderboardPage() {
         // Fetch all entries to deduplicate (max 100 from contract)
         const fetchCount = Math.min(100, totalEntries);
         console.log("Fetching", fetchCount, "players");
-        const players = await rewardsContract.getTopPlayers(fetchCount);
+        
+        const players = await readContract({
+          contract: rewardsContract,
+          method: "function getTopPlayers(uint256) view returns ((address player, uint256 score, uint256 timestamp, bool claimed)[])",
+          params: [BigInt(fetchCount)],
+        });
+        
         console.log("Raw players from contract:", players);
         
         // Format and normalize addresses
