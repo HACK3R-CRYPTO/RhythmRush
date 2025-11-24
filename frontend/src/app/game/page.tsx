@@ -2,10 +2,12 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { useWallet } from "@/context/WalletContext";
-import { ethers } from "ethers";
 import toast from 'react-hot-toast';
 import IPhoneFrame from "@/components/iPhoneFrame";
 import { motion } from "framer-motion";
+import { client } from "@/client";
+import { defineChain, getContract } from "thirdweb";
+import { prepareContractCall, sendTransaction, waitForReceipt } from "thirdweb";
 
 const REWARDS_CONTRACT_ADDRESS = "0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280";
 
@@ -119,6 +121,23 @@ export default function GamePage() {
     toneGeneratorsRef.current['tone4'] = generateTone(783.99); // G5
   }, []);
 
+  const chain = defineChain({
+    id: 11142220,
+    name: "Celo Sepolia",
+    rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+    nativeCurrency: {
+      name: "CELO",
+      symbol: "CELO",
+      decimals: 18
+    }
+  });
+
+  const rewardsContract = getContract({
+    client,
+    chain,
+    address: REWARDS_CONTRACT_ADDRESS
+  });
+
   const startGame = () => {
     setScore(0);
     scoreRef.current = 0; // Reset ref as well
@@ -157,7 +176,7 @@ export default function GamePage() {
   };
 
   const submitScoreToBlockchain = async (finalScore: number) => {
-    if (!account || !(typeof window !== 'undefined' && (window as any).ethereum)) {
+    if (!account) {
       // Store score in sessionStorage if wallet not connected
       sessionStorage.setItem('rhythmRush_score', finalScore.toString());
       sessionStorage.setItem('rhythmRush_score_timestamp', Date.now().toString());
@@ -167,13 +186,23 @@ export default function GamePage() {
 
     try {
       setIsSubmitting(true);
-      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
-      const signer = provider.getSigner();
-      const rewardsContract = new ethers.Contract(REWARDS_CONTRACT_ADDRESS, REWARDS_ABI, provider);
-      const rewardsWithSigner = rewardsContract.connect(signer);
 
-      const tx = await rewardsWithSigner.submitScore(finalScore);
-      await tx.wait();
+      const submitTx = prepareContractCall({
+        contract: rewardsContract,
+        method: "function submitScore(uint256)",
+        params: [BigInt(finalScore)],
+      });
+
+      const { transactionHash } = await sendTransaction({
+        account,
+        transaction: submitTx,
+      });
+
+      await waitForReceipt({
+        client,
+        chain,
+        transactionHash,
+      });
 
       toast.success(`Score of ${finalScore} submitted! 🎉`, {
         duration: 3000
