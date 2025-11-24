@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
-import { useActiveWallet, useActiveAccount, ConnectButton } from "thirdweb/react";
+import { useWallet } from "@/context/WalletContext";
+import { ConnectButton } from "thirdweb/react";
 import { client } from "@/client";
 import { defineChain, getContract } from "thirdweb";
 import { readContract } from "thirdweb";
@@ -38,8 +39,7 @@ const chain = defineChain({
 
 export default function PlayPage() {
   const router = useRouter();
-  const wallet = useActiveWallet();
-  const account = useActiveAccount();
+  const { isConnected, account, wallet } = useWallet();
   const [isMinted, setIsMinted] = useState(false);
   const [gemBalance, setGemBalance] = useState(0);
   const [isChecking, setIsChecking] = useState(false);
@@ -79,7 +79,7 @@ export default function PlayPage() {
       setIsMinted(false);
       setGemBalance(0);
     }
-  }, [account?.address, wallet]);
+  }, [account?.address, isConnected]);
 
   const checkGemBalance = async () => {
     if (!account?.address) {

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from 'next/navigation';
-import { useActiveAccount } from "thirdweb/react";
+import { useWallet } from "@/context/WalletContext";
 import { ethers } from "ethers";
 import toast from 'react-hot-toast';
 import IPhoneFrame from "@/components/iPhoneFrame";
@@ -23,7 +23,7 @@ const BUTTON_COLORS = ["red", "blue", "green", "yellow"];
 
 export default function SimonGamePage() {
   const router = useRouter();
-  const account = useActiveAccount();
+  const { account } = useWallet();
   const returnUrl = '/submit-score';
   
   const [isSubmitting, setIsSubmitting] = useState(false);

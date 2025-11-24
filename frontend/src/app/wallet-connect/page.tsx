@@ -1,5 +1,5 @@
 "use client";
-import { ConnectButton, useActiveWallet } from "thirdweb/react";
+import { ConnectButton } from "thirdweb/react";
 import { useRouter } from 'next/navigation';
 import { client } from "@/client";
 import { useEffect, useState } from "react";
@@ -7,10 +7,11 @@ import { defineChain } from "thirdweb/chains";
 import { motion } from "framer-motion";
 import IPhoneFrame from "@/components/iPhoneFrame";
 import { isMiniPayAvailable, openMiniPayAddCash } from "@/utils/minipay";
+import { useWallet } from "@/context/WalletContext";
 
 export default function WalletConnect() {
   const router = useRouter();
-  const wallet = useActiveWallet();
+  const { wallet } = useWallet();
   const [isMiniPay, setIsMiniPay] = useState(false);
   
   // Celo Sepolia Testnet

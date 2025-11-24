@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from 'next/navigation';
-import { useActiveAccount } from "thirdweb/react";
+import { useWallet } from "@/context/WalletContext";
 import { ethers } from "ethers";
 import { motion } from "framer-motion";
 import toast from 'react-hot-toast';
@@ -42,7 +42,7 @@ const REWARDS_ABI = [
 
 export default function SubmitScorePage() {
   const router = useRouter();
-  const account = useActiveAccount();
+  const { account } = useWallet();
   
   // Remove any score params from URL if someone tries to pass them
   useEffect(() => {

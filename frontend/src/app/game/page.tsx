@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from 'next/navigation';
-import { useActiveAccount } from "thirdweb/react";
+import { useWallet } from "@/context/WalletContext";
 import { ethers } from "ethers";
 import toast from 'react-hot-toast';
 import IPhoneFrame from "@/components/iPhoneFrame";
@@ -21,7 +21,7 @@ const REWARDS_ABI = [
 
 export default function GamePage() {
   const router = useRouter();
-  const account = useActiveAccount();
+  const { account } = useWallet();
   const returnUrl = '/submit-score'; // Always go to submit-score, no params
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -350,11 +350,19 @@ export default function GamePage() {
 
   const statusBarContent = (
     <>
-      <div className="status-bar-item">
+      <div className="status-bar-item flex items-center gap-1">
+        <button 
+          onClick={() => router.push('/play')}
+          className="flex items-center justify-center w-8 h-8 -ml-1 text-white hover:text-rhythmrush-gold transition-colors z-50"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
         <div className="status-indicator bg-green-400"></div>
-        <div>RhythmRush</div>
+        <div className="font-bold text-sm">RhythmRush</div>
       </div>
-      <div className="status-bar-item">9:41</div>
+      <div className="status-bar-item font-bold text-sm">9:41</div>
     </>
   );
 
