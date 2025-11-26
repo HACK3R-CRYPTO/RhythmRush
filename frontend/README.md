@@ -27,9 +27,19 @@ npm install
 Create `.env.local` file (optional):
 
 ```env
+# Contract Addresses (Celo Sepolia Testnet)
+NEXT_PUBLIC_RUSH_TOKEN_ADDRESS=0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
+NEXT_PUBLIC_SWAP_CONTRACT_ADDRESS=0x2744e8aAce17a217858FF8394C9d1198279215d9
+NEXT_PUBLIC_GEM_CONTRACT_ADDRESS=0xBdE05919CE1ee2E20502327fF74101A8047c37be
+NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS=0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
+NEXT_PUBLIC_CUSD_TOKEN_ADDRESS=0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+
+# Network Configuration
 NEXT_PUBLIC_CHAIN_ID=11142220
 NEXT_PUBLIC_RPC_URL=https://forno.celo-sepolia.celo-testnet.org/
 ```
+
+**Note:** Contract addresses are also hardcoded in `src/app/mint/page.tsx` as a fallback, so the app will work even without `.env.local`.
 
 ## Development
 
@@ -242,9 +252,19 @@ Audio: Web Audio API
 Create `.env.local` for custom configuration:
 
 ```env
-NEXT_PUBLIC_RPC_URL=https://forno.celo-sepolia.celo-testnet.org/
+# Contract Addresses (Celo Sepolia Testnet)
+NEXT_PUBLIC_RUSH_TOKEN_ADDRESS=0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
+NEXT_PUBLIC_SWAP_CONTRACT_ADDRESS=0x2744e8aAce17a217858FF8394C9d1198279215d9
+NEXT_PUBLIC_GEM_CONTRACT_ADDRESS=0xBdE05919CE1ee2E20502327fF74101A8047c37be
+NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS=0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
+NEXT_PUBLIC_CUSD_TOKEN_ADDRESS=0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+
+# Network Configuration
 NEXT_PUBLIC_CHAIN_ID=11142220
+NEXT_PUBLIC_RPC_URL=https://forno.celo-sepolia.celo-testnet.org/
 ```
+
+**Note:** Contract addresses are also hardcoded in the source files as a fallback, so the app will work even without `.env.local`.
 
 ## Mobile Responsiveness
 
