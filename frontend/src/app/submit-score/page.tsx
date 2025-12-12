@@ -8,8 +8,8 @@ import IPhoneFrame from "@/components/iPhoneFrame";
 import { client } from "@/client";
 import { defineChain, getContract } from "thirdweb";
 import { prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
-
-const REWARDS_CONTRACT_ADDRESS = "0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280";
+import { getContracts, CONTRACTS } from "@/config/contracts";
+import { useActiveWalletChain } from "thirdweb/react";
 
 const REWARDS_ABI = [
   {
@@ -45,6 +45,12 @@ const REWARDS_ABI = [
 export default function SubmitScorePage() {
   const router = useRouter();
   const { account } = useWallet();
+  const activeChain = useActiveWalletChain();
+  const contracts = activeChain?.id 
+    ? getContracts(activeChain.id) 
+    : CONTRACTS.mainnet;
+  
+  const REWARDS_CONTRACT_ADDRESS = contracts.rewardsContract;
   
   // Remove any score params from URL if someone tries to pass them
   useEffect(() => {
@@ -100,9 +106,9 @@ export default function SubmitScorePage() {
   }, [account]);
 
   const chain = defineChain({
-    id: 11142220,
-    name: "Celo Sepolia",
-    rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+    id: contracts.chainId,
+    name: contracts.name,
+    rpc: contracts.rpc,
     nativeCurrency: {
       name: "CELO",
       symbol: "CELO",

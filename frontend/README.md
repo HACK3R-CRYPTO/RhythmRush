@@ -8,7 +8,7 @@ You connect your wallet. You buy RUSH tokens. You mint Gem NFTs. You play games.
 
 ## Prerequisites
 
-Install Node.js 18 or higher. Install npm or yarn. Have a wallet extension ready. Configure Celo Sepolia testnet in your wallet.
+Install Node.js 18 or higher. Install npm or yarn. Have a wallet extension ready. Configure Celo Mainnet (Chain ID: 42220) or Celo Sepolia Testnet (Chain ID: 11142220) in your wallet. The app automatically detects and uses the correct network.
 
 ## Installation
 
@@ -27,19 +27,13 @@ npm install
 Create `.env.local` file (optional):
 
 ```env
-# Contract Addresses (Celo Sepolia Testnet)
-NEXT_PUBLIC_RUSH_TOKEN_ADDRESS=0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
-NEXT_PUBLIC_SWAP_CONTRACT_ADDRESS=0x2744e8aAce17a217858FF8394C9d1198279215d9
-NEXT_PUBLIC_GEM_CONTRACT_ADDRESS=0xBdE05919CE1ee2E20502327fF74101A8047c37be
-NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS=0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
-NEXT_PUBLIC_CUSD_TOKEN_ADDRESS=0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
-
-# Network Configuration
-NEXT_PUBLIC_CHAIN_ID=11142220
-NEXT_PUBLIC_RPC_URL=https://forno.celo-sepolia.celo-testnet.org/
+# Optional: Override default network (defaults to Mainnet)
+# The app automatically detects the connected network, but you can set defaults here
+NEXT_PUBLIC_DEFAULT_CHAIN_ID=42220
+NEXT_PUBLIC_DEFAULT_RPC_URL=https://forno.celo.org
 ```
 
-**Note:** Contract addresses are also hardcoded in `src/app/mint/page.tsx` as a fallback, so the app will work even without `.env.local`.
+**Note:** Contract addresses are automatically managed in `src/config/contracts.ts` based on the connected network. The app supports both Celo Mainnet and Sepolia Testnet automatically. Environment variables are optional and only needed if you want to override defaults.
 
 ## Development
 
@@ -89,9 +83,34 @@ frontend/
 └── README.md
 ```
 
+## Network Support
+
+RhythmRush frontend automatically supports both Celo Mainnet and Celo Sepolia Testnet. The app detects which network your wallet is connected to and uses the corresponding contract addresses.
+
+- **Celo Mainnet (Chain ID: 42220)** - Production network
+- **Celo Sepolia Testnet (Chain ID: 11142220)** - Test network
+
+Contract addresses are managed in `src/config/contracts.ts` and automatically selected based on the active chain ID.
+
 ## Contract Addresses
 
-Current deployed contracts on Celo Sepolia:
+### Celo Mainnet (Production):
+
+RUSH Token: 0xdA0E2109E96aC6ddAf2856fb1FafA5124A4a8209
+
+Swap Contract: 0x4013F9F2E2FdF3189F85dB8642a30b3A3F5D862A
+
+Gem Contract: 0xC722211F260E96acEDea1bbdEBaa739456CeC5C7
+
+Rewards Contract: 0xC8395B038B7B7b05a7d8161068cAd5CDFe7fbFe2
+
+cUSD Token: 0x765DE816845861e75A25fCA122bb6898B8B1282a
+
+Treasury: 0x3210607AC8126770E850957cE7373ee7e59e3A29
+
+View contracts on [Celoscan](https://celoscan.io/).
+
+### Celo Sepolia Testnet (Development):
 
 RUSH Token: 0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
 
@@ -103,7 +122,9 @@ Rewards Contract: 0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
 
 cUSD Token: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
 
-Update these in `src/app/mint/page.tsx` if contracts are redeployed.
+View contracts on [Blockscout](https://celo-sepolia.blockscout.com/).
+
+**Note:** Contract addresses are managed in `src/config/contracts.ts`. Update this file if contracts are redeployed to either network.
 
 ## MiniPay Integration
 
@@ -252,16 +273,16 @@ Audio: Web Audio API
 Create `.env.local` for custom configuration:
 
 ```env
-# Contract Addresses (Celo Sepolia Testnet)
-NEXT_PUBLIC_RUSH_TOKEN_ADDRESS=0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
-NEXT_PUBLIC_SWAP_CONTRACT_ADDRESS=0x2744e8aAce17a217858FF8394C9d1198279215d9
-NEXT_PUBLIC_GEM_CONTRACT_ADDRESS=0xBdE05919CE1ee2E20502327fF74101A8047c37be
-NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS=0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
-NEXT_PUBLIC_CUSD_TOKEN_ADDRESS=0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+# Contract Addresses (Celo Mainnet)
+NEXT_PUBLIC_RUSH_TOKEN_ADDRESS=0xdA0E2109E96aC6ddAf2856fb1FafA5124A4a8209
+NEXT_PUBLIC_SWAP_CONTRACT_ADDRESS=0x4013F9F2E2FdF3189F85dB8642a30b3A3F5D862A
+NEXT_PUBLIC_GEM_CONTRACT_ADDRESS=0xC722211F260E96acEDea1bbdEBaa739456CeC5C7
+NEXT_PUBLIC_REWARDS_CONTRACT_ADDRESS=0xC8395B038B7B7b05a7d8161068cAd5CDFe7fbFe2
+NEXT_PUBLIC_CUSD_TOKEN_ADDRESS=0x765DE816845861e75A25fCA122bb6898B8B1282a
 
-# Network Configuration
-NEXT_PUBLIC_CHAIN_ID=11142220
-NEXT_PUBLIC_RPC_URL=https://forno.celo-sepolia.celo-testnet.org/
+# Network Configuration (Celo Mainnet)
+NEXT_PUBLIC_CHAIN_ID=42220
+NEXT_PUBLIC_RPC_URL=https://forno.celo.org
 ```
 
 **Note:** Contract addresses are also hardcoded in the source files as a fallback, so the app will work even without `.env.local`.
@@ -279,7 +300,8 @@ Mobile detection uses:
 
 Wallet not connecting:
 - Ensure wallet extension is installed
-- Check wallet is connected to Celo Sepolia network
+- Check wallet is connected to Celo Mainnet (Chain ID: 42220) or Celo Sepolia Testnet (Chain ID: 11142220)
+- The app supports both networks automatically
 - Refresh page and try again
 - Check browser console for errors
 
@@ -303,9 +325,10 @@ Games not loading:
 
 Transaction fails:
 - Check you have sufficient CELO for gas
-- Verify contract addresses are correct
+- Verify contract addresses are correct (check `src/config/contracts.ts`)
 - Check browser console for error details
-- Ensure you are on Celo Sepolia network
+- Ensure you are on a supported network (Celo Mainnet: 42220 or Celo Sepolia: 11142220)
+- The app automatically uses the correct contracts for your connected network
 - For cUSD payments, ensure you have approved spending
 
 cUSD payment not available:
@@ -328,26 +351,41 @@ MiniPay browser (Opera Mini)
 
 ## Contract Update Notes
 
-When contracts are redeployed:
+When contracts are redeployed to either network:
 
-Update contract addresses in `src/app/mint/page.tsx`:
-- `RUSH_TOKEN_ADDRESS`
-- `SWAP_CONTRACT_ADDRESS`
-- `GEM_CONTRACT_ADDRESS`
+Update contract addresses in `src/config/contracts.ts`:
+- Update the `CONTRACTS.mainnet` object for Mainnet deployments
+- Update the `CONTRACTS.testnet` object for Sepolia deployments
+- The app automatically uses the correct addresses based on the connected network
 
-Update contract addresses in `src/app/play/page.tsx`:
-- `GEM_CONTRACT_ADDRESS`
+Example:
+```typescript
+export const CONTRACTS = {
+  mainnet: {
+    chainId: 42220,
+    rushToken: "0x...", // Update here
+    gemContract: "0x...", // Update here
+    // ... other addresses
+  },
+  testnet: {
+    chainId: 11142220,
+    rushToken: "0x...", // Update here
+    gemContract: "0x...", // Update here
+    // ... other addresses
+  },
+};
+```
 
-Verify all contract interactions work:
-- Buy RUSH tokens
-- Mint Gem
-- Submit scores
-- View leaderboard
+Verify all contract interactions work on both networks:
+- Buy RUSH tokens (Mainnet and Testnet)
+- Mint Gem (Mainnet and Testnet)
+- Submit scores (Mainnet and Testnet)
+- View leaderboard (Mainnet and Testnet)
 
 Test MiniPay integration:
 - Detection works
-- cUSD balance displays
-- cUSD payment flow works
+- cUSD balance displays (works on both networks)
+- cUSD payment flow works (works on both networks)
 
 ## Support
 

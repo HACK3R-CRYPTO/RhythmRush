@@ -16,15 +16,11 @@ import { isMiniPayAvailable, checkCUSDBalance, openMiniPayAddCash } from "@/util
 import { AddressDisplay } from "@/components/molecules/AddressDisplay";
 import { prepareContractCall, sendTransaction, waitForReceipt, readContract } from "thirdweb";
 import { useActiveWalletChain } from "thirdweb/react";
+import { getContracts, CONTRACTS } from "@/config/contracts";
 
-// Contract addresses on Celo Sepolia
-const RUSH_TOKEN_ADDRESS = "0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0"; // New token with swap functionality and cUSD support
-const GEM_CONTRACT_ADDRESS = "0xBdE05919CE1ee2E20502327fF74101A8047c37be";
-const SWAP_CONTRACT_ADDRESS = "0x2744e8aAce17a217858FF8394C9d1198279215d9"; // Deployed on Celo Sepolia with cUSD support
 const PRICE_PER_GEM = BigInt("34000000000000000000"); // 34 RUSH tokens
 const EXCHANGE_RATE = 30; // 1 CELO = 30 RUSH tokens
 const CUSD_EXCHANGE_RATE = 0.17 / 30; // 0.17 cUSD = 30 RUSH, so 1 RUSH = 0.17/30 cUSD
-const CUSD_TOKEN_ADDRESS = "0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b"; // Celo Sepolia cUSD
 
 // ERC20 ABI for RUSH token
 const ERC20_ABI = [
@@ -201,13 +197,23 @@ export default function MintPage() {
   
   const count = 1; // Always mint 1 Gem at a time
 
+  const activeChain = useActiveWalletChain();
+  
+  // Get contract addresses based on connected network (defaults to mainnet)
+  const contracts = activeChain?.id 
+    ? getContracts(activeChain.id) 
+    : CONTRACTS.mainnet;
+  
+  const RUSH_TOKEN_ADDRESS = contracts.rushToken;
+  const GEM_CONTRACT_ADDRESS = contracts.gemContract;
+  const SWAP_CONTRACT_ADDRESS = contracts.swapContract;
+  const CUSD_TOKEN_ADDRESS = contracts.cusdToken;
 
-
-  // Celo Sepolia Testnet
+  // Define chain based on connected network
   const chain = defineChain({
-    id: 11142220,
-    name: "Celo Sepolia",
-    rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+    id: contracts.chainId,
+    name: contracts.name,
+    rpc: contracts.rpc,
     nativeCurrency: {
       name: "CELO",
       symbol: "CELO",
@@ -233,7 +239,8 @@ export default function MintPage() {
       checkGemBalance();
       // Only check cUSD balance for MiniPay users
       if (isMiniPay && account.address) {
-        checkCUSDBalance(account.address).then(setCUSDBalance);
+        const isTestnet = contracts.chainId === CONTRACTS.testnet.chainId;
+        checkCUSDBalance(account.address, isTestnet).then(setCUSDBalance);
       }
     } else {
       setIsLoading(false);
@@ -272,8 +279,6 @@ export default function MintPage() {
     const twoDecimals = trimmedDecimal.substring(0, 2).padEnd(2, "0");
     return `${integerPart}.${twoDecimals}`;
   };
-
-  const activeChain = useActiveWalletChain();
 
   const checkRushBalance = async () => {
     if (!account?.address) return;

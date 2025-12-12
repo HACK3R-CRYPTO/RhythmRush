@@ -10,12 +10,24 @@ import {
 } from "thirdweb/react";
 import { Wallet, Account } from "thirdweb/wallets";
 import { defineChain } from "thirdweb";
+import { CONTRACTS, isSupportedChain } from "@/config/contracts";
 
-// Define Celo Sepolia chain
+// Define both Celo networks
+const celoMainnet = defineChain({
+  id: CONTRACTS.mainnet.chainId,
+  name: CONTRACTS.mainnet.name,
+  rpc: CONTRACTS.mainnet.rpc,
+  nativeCurrency: {
+    name: "CELO",
+    symbol: "CELO",
+    decimals: 18
+  }
+});
+
 const celoSepolia = defineChain({
-  id: 11142220,
-  name: "Celo Sepolia",
-  rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+  id: CONTRACTS.testnet.chainId,
+  name: CONTRACTS.testnet.name,
+  rpc: CONTRACTS.testnet.rpc,
   nativeCurrency: {
     name: "CELO",
     symbol: "CELO",
@@ -47,12 +59,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     setIsConnected(!!account);
   }, [account]);
 
-  // Auto-switch to Celo Sepolia if connected to wrong chain
+  // Auto-switch to supported Celo network if connected to unsupported chain
+  // Supports both Mainnet and Sepolia Testnet
   // This is especially important for social logins (in-app wallets)
   useEffect(() => {
-    if (isConnected && activeChain && activeChain.id !== celoSepolia.id) {
-      console.log(`Wrong chain detected (${activeChain.id}). Switching to Celo Sepolia...`);
-      switchChain(celoSepolia).catch((err) => {
+    if (isConnected && activeChain && !isSupportedChain(activeChain.id)) {
+      console.log(`Unsupported chain detected (${activeChain.id}). Switching to Celo Mainnet...`);
+      switchChain(celoMainnet).catch((err) => {
         console.error("Failed to switch chain:", err);
       });
     }

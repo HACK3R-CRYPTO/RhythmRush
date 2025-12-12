@@ -42,7 +42,7 @@ export async function getMiniPayAddress(): Promise<string | null> {
 // Check cUSD balance using viem
 export async function checkCUSDBalance(
   address: string,
-  isTestnet: boolean = true
+  isTestnet: boolean = false
 ): Promise<string> {
   try {
     const { createPublicClient, http, getContract, formatEther } = await import("viem");

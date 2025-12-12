@@ -8,8 +8,8 @@ import Loading from "@/components/Loading";
 import { client } from "@/client";
 import { defineChain, getContract } from "thirdweb";
 import { readContract } from "thirdweb";
-
-const REWARDS_CONTRACT_ADDRESS = "0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280";
+import { getContracts, CONTRACTS } from "@/config/contracts";
+import { useActiveWalletChain } from "thirdweb/react";
 
 const REWARDS_ABI = [
   {
@@ -57,6 +57,12 @@ interface LeaderboardEntry {
 export default function LeaderboardPage() {
   const router = useRouter();
   const { account } = useWallet();
+  const activeChain = useActiveWalletChain();
+  const contracts = activeChain?.id 
+    ? getContracts(activeChain.id) 
+    : CONTRACTS.mainnet;
+  
+  const REWARDS_CONTRACT_ADDRESS = contracts.rewardsContract;
   const [topPlayers, setTopPlayers] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<{rank: number, entry: LeaderboardEntry} | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,9 +72,9 @@ export default function LeaderboardPage() {
   }, []);
 
   const chain = defineChain({
-    id: 11142220,
-    name: "Celo Sepolia",
-    rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+    id: contracts.chainId,
+    name: contracts.name,
+    rpc: contracts.rpc,
     nativeCurrency: {
       name: "CELO",
       symbol: "CELO",

@@ -14,11 +14,11 @@ export default function WalletConnect() {
   const { wallet } = useWallet();
   const [isMiniPay, setIsMiniPay] = useState(false);
   
-  // Celo Sepolia Testnet
+  // Celo Mainnet
   const chain = defineChain({
-    id: 11142220,
-    name: "Celo Sepolia",
-    rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+    id: 42220,
+    name: "Celo",
+    rpc: "https://forno.celo.org",
     nativeCurrency: {
       name: "CELO",
       symbol: "CELO",

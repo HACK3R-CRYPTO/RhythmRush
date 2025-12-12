@@ -56,11 +56,36 @@ Celo offers low fees. Your rewards stay in your pocket. Fast transactions mean q
 
 Frontend: Navigate to frontend folder. Run npm install. Run npm run dev. Visit localhost:3000.
 
-Contracts: See contracts README for setup. Deploy to Celo Sepolia testnet. Update frontend addresses.
+Contracts: See contracts README for setup. Deploy to Celo mainnet or testnet. Frontend automatically detects and uses the correct network.
+
+## Network Support
+
+RhythmRush supports both Celo Mainnet and Celo Sepolia Testnet. The frontend automatically detects which network your wallet is connected to and uses the corresponding contract addresses.
+
+- **Celo Mainnet (Chain ID: 42220)** - Production network for real users
+- **Celo Sepolia Testnet (Chain ID: 11142220)** - Test network for development and testing
+
+Simply connect your wallet to either network and the app will automatically use the correct contracts.
 
 ## Deployed Contracts
 
-Celo Sepolia Testnet:
+### Celo Mainnet (Production):
+
+RUSH Token: 0xdA0E2109E96aC6ddAf2856fb1FafA5124A4a8209
+
+Swap Contract: 0x4013F9F2E2FdF3189F85dB8642a30b3A3F5D862A
+
+Gem Contract: 0xC722211F260E96acEDea1bbdEBaa739456CeC5C7
+
+Rewards Contract: 0xC8395B038B7B7b05a7d8161068cAd5CDFe7fbFe2
+
+Treasury: 0x3210607AC8126770E850957cE7373ee7e59e3A29
+
+cUSD Token: 0x765DE816845861e75A25fCA122bb6898B8B1282a
+
+View contracts on [Celoscan](https://celoscan.io/).
+
+### Celo Sepolia Testnet (Development):
 
 RUSH Token: 0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
 
@@ -70,7 +95,9 @@ Gem Contract: 0xBdE05919CE1ee2E20502327fF74101A8047c37be
 
 Rewards Contract: 0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
 
-View contracts on Blockscout.
+cUSD Token: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+
+View contracts on [Blockscout](https://celo-sepolia.blockscout.com/).
 
 ## Documentation
 

@@ -1,4 +1,6 @@
 import { FC } from 'react';
+import { useActiveWalletChain } from "thirdweb/react";
+import { getContracts, CONTRACTS } from "@/config/contracts";
 
 interface SuccessBannerProps {
   txHash?: string;
@@ -6,6 +8,14 @@ interface SuccessBannerProps {
 }
 
 const SuccessBanner: FC<SuccessBannerProps> = ({ txHash, nftTokenId }) => {
+  const activeChain = useActiveWalletChain();
+  const contracts = activeChain?.id 
+    ? getContracts(activeChain.id) 
+    : CONTRACTS.mainnet;
+  
+  const explorerUrl = contracts.explorer;
+  const gemContractAddress = contracts.gemContract;
+
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex justify-center items-center p-2 bg-gradient-to-r from-green-500 to-green-600 shadow-lg">
       <div className="flex items-center justify-between w-full max-w-md px-4">
@@ -15,7 +25,7 @@ const SuccessBanner: FC<SuccessBannerProps> = ({ txHash, nftTokenId }) => {
         <div className="flex gap-3">
           {txHash && (
             <a 
-              href={`https://celo-sepolia.blockscout.com/tx/${txHash}`}
+              href={`${explorerUrl}/tx/${txHash}`}
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white text-xs font-bold underline flex items-center hover:text-white/80"
@@ -28,7 +38,7 @@ const SuccessBanner: FC<SuccessBannerProps> = ({ txHash, nftTokenId }) => {
           )}
           {nftTokenId && (
             <a 
-              href={`https://celo-sepolia.blockscout.com/address/0xBdE05919CE1ee2E20502327fF74101A8047c37be`}
+              href={`${explorerUrl}/address/${gemContractAddress}`}
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white text-xs font-bold underline flex items-center hover:text-white/80"
