@@ -106,7 +106,25 @@ forge script script/Deploy.s.sol:DeployScript --rpc-url celo --broadcast --verif
 
 ## Deployed Contracts
 
-Celo Sepolia Testnet:
+Contracts are deployed on both networks. The frontend automatically uses the correct addresses based on the connected network.
+
+### Celo Mainnet (Production):
+
+RhythmRushToken: 0xdA0E2109E96aC6ddAf2856fb1FafA5124A4a8209
+
+RhythmRushSwap: 0x4013F9F2E2FdF3189F85dB8642a30b3A3F5D862A
+
+RhythmRushGem: 0xC722211F260E96acEDea1bbdEBaa739456CeC5C7
+
+RhythmRushRewards: 0xC8395B038B7B7b05a7d8161068cAd5CDFe7fbFe2
+
+cUSD Token: 0x765DE816845861e75A25fCA122bb6898B8B1282a
+
+Treasury: 0x3210607AC8126770E850957cE7373ee7e59e3A29
+
+View contracts on [Celoscan](https://celoscan.io/).
+
+### Celo Sepolia Testnet (Development):
 
 RhythmRushToken: 0x9A8629e7D3FcCDbC4d1DE24d43013452cfF23cF0
 
@@ -118,7 +136,7 @@ RhythmRushRewards: 0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280
 
 cUSD Token: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
 
-View contracts on Blockscout: https://celo-sepolia.blockscout.com/
+View contracts on [Blockscout](https://celo-sepolia.blockscout.com/).
 
 ## Usage
 
@@ -197,32 +215,48 @@ forge test --match-test testMintGem
 
 ## Frontend Integration
 
+The frontend automatically detects the connected network and uses the corresponding contract addresses. Contract addresses are managed in `frontend/src/config/contracts.ts`.
+
 ### Connect to Celo Network
 
-```typescript
-import { defineChain } from "thirdweb/chains";
+The frontend automatically supports both networks. Use the contracts configuration:
 
-const celoSepolia = defineChain({
-  id: 11142220,
-  name: "Celo Sepolia",
-  rpc: "https://forno.celo-sepolia.celo-testnet.org/",
+```typescript
+import { getContracts, CONTRACTS } from "@/config/contracts";
+import { useActiveWalletChain } from "thirdweb/react";
+
+// In your component
+const activeChain = useActiveWalletChain();
+const contracts = activeChain?.id 
+  ? getContracts(activeChain.id) 
+  : CONTRACTS.mainnet;
+
+// Use contracts.rushToken, contracts.gemContract, etc.
+```
+
+### Get Contract Instance
+
+```typescript
+import { getContract } from "thirdweb";
+import { defineChain } from "thirdweb";
+import { getContracts, CONTRACTS } from "@/config/contracts";
+
+const contracts = getContracts(chainId); // chainId from wallet
+const chain = defineChain({
+  id: contracts.chainId,
+  name: contracts.name,
+  rpc: contracts.rpc,
   nativeCurrency: {
     name: "CELO",
     symbol: "CELO",
     decimals: 18
   }
 });
-```
-
-### Get Contract Instance
-
-```typescript
-import { getContract } from "thirdweb/react";
 
 const gemContract = getContract({
   client: client,
-  chain: celoSepolia,
-  address: "0xBdE05919CE1ee2E20502327fF74101A8047c37be"
+  chain: chain,
+  address: contracts.gemContract
 });
 ```
 
@@ -311,17 +345,19 @@ await gemContract.write("claim", {
 
 ## Network Configuration
 
-Celo Sepolia Testnet:
-- Chain ID: 11142220
-- RPC: https://forno.celo-sepolia.celo-testnet.org/
-- Explorer: https://celo-sepolia.blockscout.com/
-- cUSD: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
+RhythmRush contracts are deployed on both Celo Mainnet and Celo Sepolia Testnet. The frontend automatically detects which network the user is connected to and uses the corresponding contract addresses.
 
-Celo Mainnet:
+### Celo Mainnet (Production):
 - Chain ID: 42220
 - RPC: https://forno.celo.org
 - Explorer: https://celoscan.io/
 - cUSD: 0x765DE816845861e75A25fCA122bb6898B8B1282a
+
+### Celo Sepolia Testnet (Development):
+- Chain ID: 11142220
+- RPC: https://forno.celo-sepolia.celo-testnet.org/
+- Explorer: https://celo-sepolia.blockscout.com/
+- cUSD: 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b
 
 ## Contract Verification
 

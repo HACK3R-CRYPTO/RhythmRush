@@ -51,12 +51,27 @@ contract DeployScript is Script {
         
         console.log("RhythmRushRewards deployed at:", address(rewards));
         
-        // Step 4: Deploy Swap contract (allows buying RUSH with CELO)
+        // Step 4: Deploy Swap contract (allows buying RUSH with CELO or cUSD)
+        // Determine cUSD address based on chain ID
+        address cusdToken;
+        if (chainId == 42220) {
+            // Celo Mainnet
+            cusdToken = CUSD_MAINNET;
+        } else if (chainId == 11142220) {
+            // Celo Sepolia
+            cusdToken = 0xdE9e4C3ce781b4bA68120d6261cbad65ce0aB00b;
+        } else {
+            // Default to Alfajores for other testnets
+            cusdToken = CUSD_ALFAJORES;
+        }
+        
         RhythmRushSwap swap = new RhythmRushSwap(
             address(rushToken),
+            cusdToken,
             treasury
         );
         console.log("RhythmRushSwap deployed at:", address(swap));
+        console.log("cUSD Token:", cusdToken);
         
         // Step 5: Set rewards contract in token (allows minting)
         rushToken.setRewardsContract(address(rewards));
@@ -85,7 +100,7 @@ contract DeployScript is Script {
         console.log("  Max Supply:", rushToken.MAX_SUPPLY());
         console.log("\nSwap Details:");
         console.log("  Exchange Rate:", swap.getExchangeRate(), "RUSH per 1 CELO");
-        console.log("\n⚠️  IMPORTANT: Update frontend with new contract addresses!");
+        console.log("\nIMPORTANT: Update frontend with new contract addresses!");
     }
 }
 

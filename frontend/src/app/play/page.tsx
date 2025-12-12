@@ -12,8 +12,8 @@ import toast from 'react-hot-toast';
 import IPhoneFrame from "@/components/iPhoneFrame";
 import { GAMES } from "@/config/game";
 import { AddressDisplay } from "@/components/molecules/AddressDisplay";
-
-const GEM_CONTRACT_ADDRESS = "0xBdE05919CE1ee2E20502327fF74101A8047c37be";
+import { getContracts, CONTRACTS } from "@/config/contracts";
+import { useActiveWalletChain } from "thirdweb/react";
 
 const GEM_ABI = [
   {
@@ -25,24 +25,30 @@ const GEM_ABI = [
   }
 ];
 
-// Celo Sepolia Testnet
-const chain = defineChain({
-  id: 11142220,
-  name: "Celo Sepolia",
-  rpc: "https://forno.celo-sepolia.celo-testnet.org/",
-  nativeCurrency: {
-    name: "CELO",
-    symbol: "CELO",
-    decimals: 18
-  }
-});
-
 export default function PlayPage() {
   const router = useRouter();
   const { isConnected, account, wallet } = useWallet();
   const [isMinted, setIsMinted] = useState(false);
   const [gemBalance, setGemBalance] = useState(0);
   const [isChecking, setIsChecking] = useState(false);
+
+  const activeChain = useActiveWalletChain();
+  const contracts = activeChain?.id 
+    ? getContracts(activeChain.id) 
+    : CONTRACTS.mainnet;
+  
+  const GEM_CONTRACT_ADDRESS = contracts.gemContract;
+
+  const chain = defineChain({
+    id: contracts.chainId,
+    name: contracts.name,
+    rpc: contracts.rpc,
+    nativeCurrency: {
+      name: "CELO",
+      symbol: "CELO",
+      decimals: 18
+    }
+  });
 
   const gemContract = getContract({
     client: client,

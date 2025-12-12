@@ -6,8 +6,8 @@ import { ethers } from "ethers";
 import toast from 'react-hot-toast';
 import IPhoneFrame from "@/components/iPhoneFrame";
 import { motion } from "framer-motion";
-
-const REWARDS_CONTRACT_ADDRESS = "0xC36b614D6e8Ef0dD5c50c8031a1ED0B7a7442280";
+import { getContracts, CONTRACTS } from "@/config/contracts";
+import { useActiveWalletChain } from "thirdweb/react";
 
 const REWARDS_ABI = [
   {
@@ -24,6 +24,12 @@ const BUTTON_COLORS = ["red", "blue", "green", "yellow"];
 export default function SimonGamePage() {
   const router = useRouter();
   const { account } = useWallet();
+  const activeChain = useActiveWalletChain();
+  const contracts = activeChain?.id 
+    ? getContracts(activeChain.id) 
+    : CONTRACTS.mainnet;
+  
+  const REWARDS_CONTRACT_ADDRESS = contracts.rewardsContract;
   const returnUrl = '/submit-score';
   
   const [isSubmitting, setIsSubmitting] = useState(false);
